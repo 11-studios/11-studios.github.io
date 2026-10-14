@@ -1,0 +1,1 @@
+if(Array.isArray(window.__11_ICONS)&&window.__11_ICONS.length){ICONS.splice(0,ICONS.length,...window.__11_ICONS);picker.innerHTML=ICONS.map((i,n)=>`<button type="button" class="icon-choice ${n===0?'selected':''}" title="${i.name}" data-icon="${i.name}"><img src="${i.src}" alt=""></button>`).join('');document.getElementById('pIcon').value=ICONS[0]?.name||'';renderPlugins();}
