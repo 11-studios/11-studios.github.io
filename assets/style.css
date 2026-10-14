@@ -1,14 +1,18 @@
 @import url("style-base.css");
 
-/* Hero portrait quality + 11_ Studios wordmark */
+/* Hero portrait */
 .orbit-wrap{
   background-image:url("ataturk-hero-v2.webp")!important;
+  background-position:center bottom!important;
+  background-size:contain!important;
+  background-repeat:no-repeat!important;
 }
 
+/* 11_ Studios wordmark above hero title */
 .eyebrow{
   display:block!important;
-  width:210px!important;
-  height:46px!important;
+  width:300px!important;
+  height:66px!important;
   padding:0!important;
   border:0!important;
   border-radius:0!important;
@@ -21,5 +25,5 @@
 .eyebrow img{display:none!important}
 
 @media(max-width:620px){
-  .eyebrow{width:185px!important;height:41px!important}
+  .eyebrow{width:245px!important;height:54px!important}
 }
