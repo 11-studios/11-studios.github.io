@@ -1,0 +1,80 @@
+name: Apply hero refresh
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-hero-refresh.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build images and update hero
+        shell: bash
+        run: |
+          cat .hero_upload/part1.txt .hero_upload/part2.txt .hero_upload/part3.txt .hero_upload/part4.txt .hero_upload/part5.txt .hero_upload/part6.txt | tr -d '\r\n' | base64 -d > assets/ataturk-hero-hq.webp
+          tr -d '\r\n' < .hero_upload/wordmark.txt | base64 -d > assets/hero-wordmark.png
+
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s, n = re.subn(
+              r'<div class="eyebrow" id="heroEyebrow">.*?</div>',
+              '<img class="hero-wordmark" src="assets/hero-wordmark.png" alt="11_ Studios">',
+              s,
+              count=1,
+              flags=re.S,
+          )
+          if n != 1:
+              raise SystemExit(f'hero eyebrow replacement count: {n}')
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('assets/style.css')
+          s = p.read_text(encoding='utf-8')
+          old = 'background:url("ataturk-hero-v2.webp")'
+          if old not in s:
+              raise SystemExit('old portrait background reference not found')
+          s = s.replace(old, 'background:url("ataturk-hero-hq.webp")', 1)
+
+          css = '''
+
+/* HERO WORDMARK */
+.hero-wordmark{
+  display:block;
+  width:210px;
+  max-width:100%;
+  height:auto;
+  object-fit:contain;
+  image-rendering:auto;
+  filter:none;
+}
+@media(max-width:620px){
+  .hero-wordmark{width:185px}
+}
+'''
+          if '/* HERO WORDMARK */' not in s:
+              s += css
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ataturk-hero-hq.webp assets/hero-wordmark.png index.html assets/style.css
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Improve hero portrait and add wordmark"
+          git push
