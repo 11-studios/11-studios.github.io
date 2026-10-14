@@ -5,7 +5,7 @@
     "version": "1.4.5",
     "category": "visual",
     "price": 0,
-    "icon": "🧑",
+    "icon": "general_icon_11",
     "desc": {
       "tr": "Sohbette, TAB'da ve desteklenen arayüzlerde oyuncu kafalarını temiz ve modern biçimde gösterir.",
       "en": "Displays player heads cleanly in chat, TAB and supported interfaces."
@@ -18,7 +18,7 @@
     "version": "1.0.0",
     "category": "security",
     "price": 0,
-    "icon": "🛡️",
+    "icon": "general_icon_23",
     "desc": {
       "tr": "Yaygın dupe açıklarını ve gereksiz tekrar eden redstone sistemlerini sınırlamaya yardımcı olan güvenlik aracı.",
       "en": "A security tool designed to reduce common dupe exploits and abusive repeating redstone systems."
@@ -31,7 +31,7 @@
     "version": "1.0.0",
     "category": "utility",
     "price": 0,
-    "icon": "🚪",
+    "icon": "general_icon_43",
     "desc": {
       "tr": "Oyuncuyu girişte belirlenen noktaya gönderir ve yapılandırılmış başlangıç işlemlerini çalıştırır.",
       "en": "Teleports players to a configured location on join and runs configured startup actions."
@@ -44,7 +44,7 @@
     "version": "1.0.2",
     "category": "utility",
     "price": 39,
-    "icon": "✉️",
+    "icon": "general_icon_17",
     "desc": {
       "tr": "Ölüm mesajlarını sunucunun stiline göre sade ve özelleştirilebilir biçimde yönetir.",
       "en": "Provides clean, customizable death messages that match your server's style."
@@ -57,7 +57,7 @@
     "version": "0.9.0",
     "category": "utility",
     "price": 99,
-    "icon": "⛏️",
+    "icon": "general_icon_34",
     "desc": {
       "tr": "İstemci görünürlüğü ve sunucu tarafı optimizasyon fikirlerini tek yapıda birleştiren performans aracı.",
       "en": "A performance-focused tool combining client visibility and server-side optimization concepts."
@@ -70,7 +70,7 @@
     "version": "1.0.0",
     "category": "visual",
     "price": 0,
-    "icon": "❎",
+    "icon": "general_icon_5",
     "desc": {
       "tr": "Katılım sırasında istenmeyen arayüz ve popup davranışlarını kontrol etmeye yardımcı olur.",
       "en": "Helps control unwanted interface and popup behavior when players join."
@@ -83,7 +83,7 @@
     "version": "1.0.0",
     "category": "security",
     "price": 0,
-    "icon": "🗑️",
+    "icon": "general_icon_20",
     "desc": {
       "tr": "Şüpheli hareketleri ve yaygın hile davranışlarını izleyerek sunucu güvenliğini destekleyen denetim sistemi.",
       "en": "A monitoring system that supports server security by detecting suspicious movement and common cheat behavior."
@@ -96,7 +96,7 @@
     "version": "1.8.4",
     "category": "visual",
     "price": 0,
-    "icon": "🖥️",
+    "icon": "general_icon_41",
     "desc": {
       "tr": "Oyuncu girişlerinde özel görsel ve başlık akışlarıyla markalı açılış deneyimi sunar.",
       "en": "Creates a branded login experience with custom visuals and title sequences."
@@ -109,7 +109,7 @@
     "version": "1.0.0",
     "category": "security",
     "price": 0,
-    "icon": "🏰",
+    "icon": "general_icon_24",
     "desc": {
       "tr": "Dünya bazlı blok kırma ve yerleştirme kurallarını sade yapılandırmayla yönetir.",
       "en": "Manages per-world block breaking and placing rules through a simple configuration."
