@@ -1,0 +1,119 @@
+[
+  {
+    "id": "11-chatheads",
+    "name": "11_ChatHeads",
+    "version": "1.4.5",
+    "category": "visual",
+    "price": 0,
+    "icon": "🧑",
+    "desc": {
+      "tr": "Sohbette, TAB'da ve desteklenen arayüzlerde oyuncu kafalarını temiz ve modern biçimde gösterir.",
+      "en": "Displays player heads cleanly in chat, TAB and supported interfaces."
+    },
+    "url": ""
+  },
+  {
+    "id": "11-antidupe",
+    "name": "11_AntiDupe",
+    "version": "1.0.0",
+    "category": "security",
+    "price": 0,
+    "icon": "🛡️",
+    "desc": {
+      "tr": "Yaygın dupe açıklarını ve gereksiz tekrar eden redstone sistemlerini sınırlamaya yardımcı olan güvenlik aracı.",
+      "en": "A security tool designed to reduce common dupe exploits and abusive repeating redstone systems."
+    },
+    "url": ""
+  },
+  {
+    "id": "11-join",
+    "name": "11_Join",
+    "version": "1.0.0",
+    "category": "utility",
+    "price": 0,
+    "icon": "🚪",
+    "desc": {
+      "tr": "Oyuncuyu girişte belirlenen noktaya gönderir ve yapılandırılmış başlangıç işlemlerini çalıştırır.",
+      "en": "Teleports players to a configured location on join and runs configured startup actions."
+    },
+    "url": ""
+  },
+  {
+    "id": "11-deathmessages",
+    "name": "11_DeathMessages",
+    "version": "1.0.2",
+    "category": "utility",
+    "price": 39,
+    "icon": "✉️",
+    "desc": {
+      "tr": "Ölüm mesajlarını sunucunun stiline göre sade ve özelleştirilebilir biçimde yönetir.",
+      "en": "Provides clean, customizable death messages that match your server's style."
+    },
+    "url": ""
+  },
+  {
+    "id": "11-renderoptimizer",
+    "name": "11_RenderOptimizer",
+    "version": "0.9.0",
+    "category": "utility",
+    "price": 99,
+    "icon": "⛏️",
+    "desc": {
+      "tr": "İstemci görünürlüğü ve sunucu tarafı optimizasyon fikirlerini tek yapıda birleştiren performans aracı.",
+      "en": "A performance-focused tool combining client visibility and server-side optimization concepts."
+    },
+    "url": ""
+  },
+  {
+    "id": "11-antipopup",
+    "name": "11_AntiPopup",
+    "version": "1.0.0",
+    "category": "visual",
+    "price": 0,
+    "icon": "❎",
+    "desc": {
+      "tr": "Katılım sırasında istenmeyen arayüz ve popup davranışlarını kontrol etmeye yardımcı olur.",
+      "en": "Helps control unwanted interface and popup behavior when players join."
+    },
+    "url": ""
+  },
+  {
+    "id": "11-anticheat",
+    "name": "11_AntiCheat",
+    "version": "1.0.0",
+    "category": "security",
+    "price": 0,
+    "icon": "🗑️",
+    "desc": {
+      "tr": "Şüpheli hareketleri ve yaygın hile davranışlarını izleyerek sunucu güvenliğini destekleyen denetim sistemi.",
+      "en": "A monitoring system that supports server security by detecting suspicious movement and common cheat behavior."
+    },
+    "url": ""
+  },
+  {
+    "id": "11-loginscreen",
+    "name": "11_LoginScreen",
+    "version": "1.8.4",
+    "category": "visual",
+    "price": 0,
+    "icon": "🖥️",
+    "desc": {
+      "tr": "Oyuncu girişlerinde özel görsel ve başlık akışlarıyla markalı açılış deneyimi sunar.",
+      "en": "Creates a branded login experience with custom visuals and title sequences."
+    },
+    "url": ""
+  },
+  {
+    "id": "11-worldguard",
+    "name": "11_WorldGuard",
+    "version": "1.0.0",
+    "category": "security",
+    "price": 0,
+    "icon": "🏰",
+    "desc": {
+      "tr": "Dünya bazlı blok kırma ve yerleştirme kurallarını sade yapılandırmayla yönetir.",
+      "en": "Manages per-world block breaking and placing rules through a simple configuration."
+    },
+    "url": ""
+  }
+]
