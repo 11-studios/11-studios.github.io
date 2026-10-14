@@ -1,80 +1,54 @@
 name: Apply hero refresh
-
 on:
+  workflow_dispatch:
   push:
     paths:
       - '.github/workflows/apply-hero-refresh.yml'
-
 permissions:
   contents: write
-
 jobs:
-  apply:
+  patch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Build images and update hero
-        shell: bash
+      - name: Build images and patch hero
+        shell: python
         run: |
-          cat .hero_upload/part1.txt .hero_upload/part2.txt .hero_upload/part3.txt .hero_upload/part4.txt .hero_upload/part5.txt .hero_upload/part6.txt | tr -d '\r\n' | base64 -d > assets/ataturk-hero-hq.webp
-          tr -d '\r\n' < .hero_upload/wordmark.txt | base64 -d > assets/hero-wordmark.png
-
-          python - <<'PY'
           from pathlib import Path
-          import re
+          import base64
 
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          s, n = re.subn(
-              r'<div class="eyebrow" id="heroEyebrow">.*?</div>',
-              '<img class="hero-wordmark" src="assets/hero-wordmark.png" alt="11_ Studios">',
-              s,
-              count=1,
-              flags=re.S,
-          )
-          if n != 1:
-              raise SystemExit(f'hero eyebrow replacement count: {n}')
-          p.write_text(s, encoding='utf-8')
+          hero64 = ''.join(Path(f'.hero_upload/part{i}.txt').read_text(encoding='utf-8').strip() for i in range(1, 7))
+          Path('assets/ataturk-hero-hq.webp').write_bytes(base64.b64decode(hero64))
+          logo64 = Path('.hero_upload/wordmark.txt').read_text(encoding='utf-8').strip()
+          Path('assets/hero-wordmark.png').write_bytes(base64.b64decode(logo64))
 
-          p = Path('assets/style.css')
-          s = p.read_text(encoding='utf-8')
-          old = 'background:url("ataturk-hero-v2.webp")'
-          if old not in s:
-              raise SystemExit('old portrait background reference not found')
-          s = s.replace(old, 'background:url("ataturk-hero-hq.webp")', 1)
+          css = Path('assets/style.css')
+          s = css.read_text(encoding='utf-8')
+          s = s.replace('background:url("ataturk-hero-v2.webp")', 'background:url("ataturk-hero-hq.webp")', 1)
+          s += '''
 
-          css = '''
-
-/* HERO WORDMARK */
-.hero-wordmark{
-  display:block;
-  width:210px;
-  max-width:100%;
-  height:auto;
-  object-fit:contain;
-  image-rendering:auto;
-  filter:none;
+/* HERO WORDMARK - replaces developer badge */
+.eyebrow{
+  display:block!important;
+  width:210px!important;
+  height:46px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:url("hero-wordmark.png") left center/contain no-repeat!important;
+  font-size:0!important;
+  color:transparent!important;
+  gap:0!important;
 }
-@media(max-width:620px){
-  .hero-wordmark{width:185px}
-}
+.eyebrow img{display:none!important}
+@media(max-width:620px){.eyebrow{width:185px!important;height:41px!important}}
 '''
-          if '/* HERO WORDMARK */' not in s:
-              s += css
-          p.write_text(s, encoding='utf-8')
-          PY
-
+          css.write_text(s, encoding='utf-8')
       - name: Commit changes
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/ataturk-hero-hq.webp assets/hero-wordmark.png index.html assets/style.css
-          if git diff --cached --quiet; then
-            exit 0
-          fi
+          git add assets/ataturk-hero-hq.webp assets/hero-wordmark.png assets/style.css
           git commit -m "Improve hero portrait and add wordmark"
           git push
