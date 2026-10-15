@@ -1,4 +1,4 @@
-name: Publish site v19
+name: Publish site v20
 on:
   push:
     paths:
@@ -10,17 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Switch site to v19 assets
+      - name: Switch site to v20 assets
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261015-19', s)
+          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261015-20', s)
           s=re.sub(
               r'<img\s+class="brand-orbit hero-portrait"[^>]*>',
-              '<img class="brand-orbit hero-portrait" src="assets/ataturk-site.webp?v=20261015-19" alt="Atatürk">',
+              '<img class="brand-orbit hero-portrait" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Atatürk">',
               s,
               count=1,
           )
@@ -32,5 +32,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v19 cache bust'
+          git commit -m 'Publish site v20 cache bust'
           git push
