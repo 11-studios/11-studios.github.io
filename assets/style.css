@@ -11,8 +11,8 @@
 /* 11_ Studios wordmark above hero title */
 .eyebrow{
   display:block!important;
-  width:300px!important;
-  height:66px!important;
+  width:360px!important;
+  height:79px!important;
   padding:0!important;
   border:0!important;
   border-radius:0!important;
@@ -25,5 +25,5 @@
 .eyebrow img{display:none!important}
 
 @media(max-width:620px){
-  .eyebrow{width:245px!important;height:54px!important}
+  .eyebrow{width:285px!important;height:63px!important}
 }
