@@ -1,7 +1,7 @@
 @import url("style-base.css");
 
 /* Hero portrait */
-.orbit-wrap{background-image:none!important;background:none!important;}
+.orbit-wrap{background-image:none!important;background:none!important;overflow:visible!important;}
 
 /* Removed Ataturk quote must never be visible, even from stale cached JS */
 .ataturk-quote{
@@ -167,4 +167,4 @@
   background:rgba(5,4,8,.5);
 }
 
-.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;}
+.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}
