@@ -23,23 +23,21 @@
   letter-spacing:0!important;
   gap:0!important;
   transform-origin:left center!important;
-  filter:drop-shadow(0 0 8px rgba(203,167,255,.62)) drop-shadow(0 0 22px rgba(169,135,255,.40)) drop-shadow(0 0 38px rgba(169,135,255,.20))!important;
-  animation:heroWordmarkFloat 4.2s ease-in-out infinite!important;
+  filter:drop-shadow(0 0 10px rgba(203,167,255,.72)) drop-shadow(0 0 24px rgba(169,135,255,.45)) drop-shadow(0 0 42px rgba(169,135,255,.24))!important;
+  animation:heroWordmarkFloat 3s ease-in-out infinite!important;
   will-change:transform,filter;
 }
 .eyebrow img{display:none!important}
 
 @keyframes heroWordmarkFloat{
   0%,100%{
-    transform:translateY(0);
-    filter:drop-shadow(0 0 8px rgba(203,167,255,.58)) drop-shadow(0 0 20px rgba(169,135,255,.36)) drop-shadow(0 0 34px rgba(169,135,255,.18));
+    transform:translate3d(0,10px,0);
+    filter:drop-shadow(0 0 9px rgba(203,167,255,.62)) drop-shadow(0 0 21px rgba(169,135,255,.38)) drop-shadow(0 0 36px rgba(169,135,255,.20));
   }
-  25%{
-    transform:translateY(-9px);
-    filter:drop-shadow(0 0 10px rgba(203,167,255,.72)) drop-shadow(0 0 25px rgba(169,135,255,.48)) drop-shadow(0 0 42px rgba(169,135,255,.24));
+  50%{
+    transform:translate3d(0,-14px,0);
+    filter:drop-shadow(0 0 13px rgba(215,190,255,.88)) drop-shadow(0 0 30px rgba(184,145,255,.58)) drop-shadow(0 0 50px rgba(169,135,255,.30));
   }
-  50%{transform:translateY(0)}
-  75%{transform:translateY(8px)}
 }
 
 @media(max-width:900px){
@@ -48,8 +46,4 @@
 
 @media(max-width:620px){
   .eyebrow{width:calc(100vw - 34px)!important}
-}
-
-@media(prefers-reduced-motion:reduce){
-  .eyebrow{animation:none!important}
 }
