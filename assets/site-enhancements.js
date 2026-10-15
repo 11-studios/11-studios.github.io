@@ -10,16 +10,6 @@
     if(isEnglish()) title.textContent='A few plugins here, use them if you want.';
   }
 
-  function installAtaturkQuote(){
-    const wrap=document.querySelector('.orbit-wrap');
-    if(!wrap||wrap.querySelector('.ataturk-quote'))return;
-    const q=document.createElement('div');
-    q.className='ataturk-quote';
-    q.setAttribute('aria-hidden','true');
-    q.innerHTML='<span>Ne Mutlu</span><span>Türküm</span><span>Diyene!</span>';
-    wrap.appendChild(q);
-  }
-
   function readStats(){
     try{
       const value=JSON.parse(localStorage.getItem(STATS_KEY)||'{}');
@@ -159,7 +149,7 @@
   }
 
   function init(){
-    installAtaturkQuote();
+    document.querySelector('.ataturk-quote')?.remove();
     installAnalyticsPanel();
     installStoreLabel();
     fixHeroTitle();
@@ -176,7 +166,7 @@
     let tries=0;
     const timer=setInterval(()=>{
       tries++;
-      installAtaturkQuote();
+      document.querySelector('.ataturk-quote')?.remove();
       installAnalyticsPanel();
       fixHeroTitle();
       if(patchBase()||tries>120){clearInterval(timer);renderAnalytics();}
