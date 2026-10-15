@@ -8,45 +8,55 @@
   background-repeat:no-repeat!important;
 }
 
-/* 11_ Studios wordmark above hero title */
+/* 11_ Studios wordmark: wrapper has NO glow/background so no rectangle appears */
 .eyebrow{
   display:block!important;
-  width:620px!important;
+  width:560px!important;
+  max-width:100%!important;
   height:auto!important;
-  aspect-ratio:1000 / 210;
+  aspect-ratio:auto!important;
   padding:0!important;
+  margin:0 0 18px 0!important;
   border:0!important;
   border-radius:0!important;
-  background-image:url("hero-wordmark.png")!important;
-  background-position:left center!important;
-  background-size:contain!important;
-  background-repeat:no-repeat!important;
+  background:none!important;
+  box-shadow:none!important;
+  filter:none!important;
   font-size:0!important;
+  line-height:0!important;
   color:transparent!important;
   letter-spacing:0!important;
-  gap:0!important;
-  transform-origin:left center!important;
-  filter:drop-shadow(0 0 10px rgba(203,167,255,.72)) drop-shadow(0 0 24px rgba(169,135,255,.45)) drop-shadow(0 0 42px rgba(169,135,255,.24))!important;
+  overflow:visible!important;
+}
+
+.eyebrow .hero-wordmark-img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  object-fit:contain!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform-origin:center center!important;
+  filter:drop-shadow(0 0 7px rgba(203,167,255,.62)) drop-shadow(0 0 16px rgba(169,135,255,.36))!important;
   animation:heroWordmarkFloat 3s ease-in-out infinite!important;
   will-change:transform,filter;
 }
-.eyebrow img{display:none!important}
 
 @keyframes heroWordmarkFloat{
   0%,100%{
-    transform:translate3d(0,10px,0);
-    filter:drop-shadow(0 0 9px rgba(203,167,255,.62)) drop-shadow(0 0 21px rgba(169,135,255,.38)) drop-shadow(0 0 36px rgba(169,135,255,.20));
+    transform:translate3d(0,7px,0);
+    filter:drop-shadow(0 0 6px rgba(203,167,255,.55)) drop-shadow(0 0 14px rgba(169,135,255,.30));
   }
   50%{
-    transform:translate3d(0,-14px,0);
-    filter:drop-shadow(0 0 13px rgba(215,190,255,.88)) drop-shadow(0 0 30px rgba(184,145,255,.58)) drop-shadow(0 0 50px rgba(169,135,255,.30));
+    transform:translate3d(0,-10px,0);
+    filter:drop-shadow(0 0 9px rgba(215,190,255,.78)) drop-shadow(0 0 20px rgba(184,145,255,.44));
   }
 }
 
 @media(max-width:900px){
-  .eyebrow{width:540px!important}
+  .eyebrow{width:500px!important}
 }
 
 @media(max-width:620px){
-  .eyebrow{width:min(460px,calc(100vw - 34px))!important}
+  .eyebrow{width:min(390px,calc(100vw - 34px))!important}
 }
