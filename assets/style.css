@@ -11,13 +11,16 @@
 /* 11_ Studios wordmark above hero title */
 .eyebrow{
   display:block!important;
-  width:720px!important;
+  width:620px!important;
   height:auto!important;
-  aspect-ratio:256 / 56;
+  aspect-ratio:1000 / 210;
   padding:0!important;
   border:0!important;
   border-radius:0!important;
-  background:url("hero-wordmark.png") left center/contain no-repeat!important;
+  background-image:url("hero-wordmark.png")!important;
+  background-position:left center!important;
+  background-size:contain!important;
+  background-repeat:no-repeat!important;
   font-size:0!important;
   color:transparent!important;
   letter-spacing:0!important;
@@ -41,9 +44,9 @@
 }
 
 @media(max-width:900px){
-  .eyebrow{width:620px!important}
+  .eyebrow{width:540px!important}
 }
 
 @media(max-width:620px){
-  .eyebrow{width:calc(100vw - 34px)!important}
+  .eyebrow{width:min(460px,calc(100vw - 34px))!important}
 }
