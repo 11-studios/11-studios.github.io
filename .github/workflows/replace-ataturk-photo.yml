@@ -1,0 +1,46 @@
+name: Replace Ataturk hero photo
+on:
+  push:
+    paths:
+      - '.github/workflows/replace-ataturk-photo.yml'
+permissions:
+  contents: write
+jobs:
+  replace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exact photo
+        run: |
+          curl -L --fail --retry 3 'https://chetyarbrough.blog/wp-content/uploads/2019/05/mustafa-kemal-ataturk-1st-president-of-turkey-1923-1938-died-at-age-57-in-1938.jpg?w=685' -o /tmp/ataturk.jpg
+      - name: Convert to PNG and replace hero image
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import re
+
+          img = Image.open('/tmp/ataturk.jpg').convert('RGBA')
+          if img.width > 900:
+              ratio = 900 / img.width
+              img = img.resize((900, round(img.height * ratio)), Image.Resampling.LANCZOS)
+          out = Path('assets/ataturk-hero-new.png')
+          img.save(out, 'PNG', optimize=True)
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          replacement = '<img class="brand-orbit hero-portrait" src="assets/ataturk-hero-new.png?v=20261015-1" alt="Atatürk">'
+          s2, n = re.subn(r'<img\s+class="brand-orbit hero-portrait"[^>]*>', replacement, s, count=1)
+          if n != 1:
+              raise SystemExit(f'Hero portrait tag not found or ambiguous: {n}')
+          p.write_text(s2, encoding='utf-8')
+          PY
+      - name: Commit replacement
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/ataturk-hero-new.png index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Replace hero portrait with requested Ataturk photo'
+          git push
