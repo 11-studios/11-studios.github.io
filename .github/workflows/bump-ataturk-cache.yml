@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Force current Ataturk hero and bust cache
+      - name: Force transparent Ataturk hero and bust cache
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -18,10 +18,10 @@ jobs:
 
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261015-16', s)
+          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261015-17', s)
           s=re.sub(
               r'<img\s+class="brand-orbit hero-portrait"[^>]*>',
-              '<img class="brand-orbit hero-portrait" src="assets/ataturk-hero-new.png?v=20261015-16" alt="Atatürk">',
+              '<img class="brand-orbit hero-portrait" src="assets/ataturk-hero-new.png?v=20261015-17" alt="Atatürk">',
               s,
               count=1,
           )
@@ -29,9 +29,11 @@ jobs:
 
           c=Path('assets/style.css')
           x=c.read_text(encoding='utf-8')
-          x=re.sub(r'\.orbit-wrap\{[^}]*background-image:[^}]*\}', '.orbit-wrap{background-image:none!important;background:none!important;}', x, count=1, flags=re.S)
+          x=re.sub(r'\.orbit-wrap\{[^}]*background-image:[^}]*\}', '.orbit-wrap{background-image:none!important;background:none!important;overflow:visible!important;}', x, count=1, flags=re.S)
           if '.hero-portrait{' not in x:
-              x += '\n.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;}\n'
+              x += '\n.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}\n'
+          else:
+              x=re.sub(r'\.hero-portrait\{[^}]*\}', '.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}', x, count=1, flags=re.S)
           c.write_text(x, encoding='utf-8')
           PY
       - name: Commit
@@ -40,5 +42,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html assets/style.css
           git diff --cached --quiet && exit 0
-          git commit -m 'Restore Ataturk hero and bust cache'
+          git commit -m 'Publish transparent Ataturk portrait'
           git push
