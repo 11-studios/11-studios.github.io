@@ -1,4 +1,4 @@
-name: Bump Ataturk cache
+name: Publish site v19
 on:
   push:
     paths:
@@ -6,41 +6,31 @@ on:
 permissions:
   contents: write
 jobs:
-  bump:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Publish stable Ataturk loader and bust cache
+      - name: Switch site to v19 assets
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
-
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261015-18', s)
+          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261015-19', s)
           s=re.sub(
               r'<img\s+class="brand-orbit hero-portrait"[^>]*>',
-              '<img class="brand-orbit hero-portrait" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Atatürk">',
+              '<img class="brand-orbit hero-portrait" src="assets/ataturk-site.webp?v=20261015-19" alt="Atatürk">',
               s,
               count=1,
           )
-          p.write_text(s, encoding='utf-8')
-
-          c=Path('assets/style.css')
-          x=c.read_text(encoding='utf-8')
-          x=re.sub(r'\.orbit-wrap\{[^}]*background-image:[^}]*\}', '.orbit-wrap{background-image:none!important;background:none!important;overflow:visible!important;}', x, count=1, flags=re.S)
-          if '.hero-portrait{' not in x:
-              x += '\n.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}\n'
-          else:
-              x=re.sub(r'\.hero-portrait\{[^}]*\}', '.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}', x, count=1, flags=re.S)
-          c.write_text(x, encoding='utf-8')
+          p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit
+      - name: Commit cache-bust
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/style.css
+          git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Use stable Ataturk loader v18'
+          git commit -m 'Publish site v19 cache bust'
           git push

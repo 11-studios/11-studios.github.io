@@ -1,33 +1,50 @@
 (()=>{
-  const exact=document.createElement('script');
-  exact.src='assets/ataturk-exact.js?v=20261015-18';
-  exact.async=false;
-  document.head.appendChild(exact);
+  const VERSION='20261015-19';
 
-  const css=document.createElement('link');
-  css.rel='stylesheet';
-  css.href='assets/site-enhancements.css?v=20261015-15';
-  document.head.appendChild(css);
+  const addStyle=(href,id)=>{
+    if(id&&document.getElementById(id)) return;
+    const l=document.createElement('link');
+    l.rel='stylesheet';l.href=href;if(id)l.id=id;document.head.appendChild(l);
+  };
+  const addScript=(src,onload)=>{
+    const s=document.createElement('script');
+    s.src=src;s.async=false;if(onload)s.addEventListener('load',onload,{once:true});document.head.appendChild(s);
+  };
 
-  const fileCss=document.createElement('link');
-  fileCss.rel='stylesheet';
-  fileCss.href='assets/plugin-files.css?v=20261015-15';
-  document.head.appendChild(fileCss);
-
-  const legacy=document.createElement('script');
-  legacy.src='assets/app-media.js?v=20261015-15';
-  legacy.async=false;
-  legacy.addEventListener('load',()=>{
-    const extra=document.createElement('script');
-    extra.src='assets/site-enhancements.js?v=20261015-15';
-    extra.async=false;
-    extra.addEventListener('load',()=>{
-      const files=document.createElement('script');
-      files.src='assets/plugin-files.js?v=20261015-15';
-      files.async=false;
-      document.head.appendChild(files);
+  const applyPortrait=()=>{
+    const img=document.querySelector('.hero-portrait');
+    const wrap=document.querySelector('.orbit-wrap');
+    if(!img)return;
+    const src=`assets/ataturk-site.webp?v=${VERSION}`;
+    if(img.getAttribute('src')!==src)img.setAttribute('src',src);
+    img.removeAttribute('srcset');
+    Object.assign(img.style,{
+      display:'block',visibility:'visible',opacity:'1',width:'520px',height:'auto',
+      maxWidth:'100%',maxHeight:'620px',objectFit:'contain',objectPosition:'center bottom',
+      borderRadius:'0',background:'transparent',boxShadow:'none',animation:'none'
     });
-    document.head.appendChild(extra);
+    img.style.setProperty('filter','drop-shadow(0 14px 30px rgba(137,101,255,.10))','important');
+    if(wrap){
+      wrap.style.setProperty('background','none','important');
+      wrap.style.setProperty('background-image','none','important');
+      wrap.style.setProperty('overflow','visible','important');
+    }
+  };
+
+  addStyle(`assets/site-enhancements.css?v=${VERSION}`,'siteEnhancementsCss');
+  addStyle(`assets/plugin-files.css?v=${VERSION}`,'pluginFilesCss');
+  addStyle(`assets/store-search.css?v=${VERSION}`,'storeSearchCss');
+  applyPortrait();
+
+  addScript(`assets/app-media.js?v=${VERSION}`,()=>{
+    addScript(`assets/site-enhancements.js?v=${VERSION}`);
+    addScript(`assets/plugin-files.js?v=${VERSION}`);
+    addScript(`assets/store-search.js?v=${VERSION}`);
+    applyPortrait();
+    setTimeout(applyPortrait,300);
+    setTimeout(applyPortrait,1200);
   });
-  document.head.appendChild(legacy);
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyPortrait,{once:true});
+  window.addEventListener('load',applyPortrait,{once:true});
 })();
