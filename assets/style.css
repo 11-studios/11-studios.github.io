@@ -60,3 +60,50 @@
 @media(max-width:620px){
   .eyebrow{width:min(390px,calc(100vw - 34px))!important}
 }
+
+/* Plugin promo videos */
+.detail-video-panel{
+  margin-top:22px;
+}
+
+.plugin-video-shell{
+  margin-top:14px;
+  width:100%;
+  border:1px solid rgba(203,167,255,.18);
+  border-radius:18px;
+  overflow:hidden;
+  background:rgba(7,5,11,.78);
+}
+
+.plugin-video-frame,
+.plugin-video-file{
+  display:block;
+  width:100%;
+  aspect-ratio:16 / 9;
+  border:0;
+  background:#050408;
+  object-fit:contain;
+}
+
+.plugin-video-frame[hidden],
+.plugin-video-file[hidden],
+.plugin-video-link[hidden]{
+  display:none!important;
+}
+
+.plugin-video-link{
+  margin:18px;
+  width:max-content;
+}
+
+/* Absolute bottom credit */
+.made-by-sems{
+  width:100%;
+  padding:14px 18px 18px;
+  text-align:center;
+  font-size:12px;
+  letter-spacing:.08em;
+  color:#978ca3;
+  border-top:1px solid rgba(203,167,255,.08);
+  background:rgba(5,4,8,.5);
+}
