@@ -15,18 +15,12 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import base64, re
-          # Rebuild a real image file from the stored portrait data.
           b64 = Path('assets/ataturk-portrait.b64').read_text(encoding='utf-8').strip()
           Path('assets/ataturk-final.png').write_bytes(base64.b64decode(b64))
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261015-21', s)
-          s=re.sub(
-              r'<img\s+class="brand-orbit hero-portrait"[^>]*>',
-              '<img class="brand-orbit hero-portrait" src="assets/ataturk-final.png?v=20261015-21" alt="Atatürk">',
-              s,
-              count=1,
-          )
+          s=re.sub(r'<img\s+class="brand-orbit hero-portrait"[^>]*>', '<img class="brand-orbit hero-portrait" src="assets/ataturk-final.png?v=20261015-21" alt="Atatürk">', s, count=1)
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit v21
