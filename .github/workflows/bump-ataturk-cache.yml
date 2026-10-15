@@ -1,0 +1,34 @@
+name: Bump Ataturk cache
+on:
+  push:
+    paths:
+      - '.github/workflows/bump-ataturk-cache.yml'
+permissions:
+  contents: write
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump app version and remove old portrait background
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          import re
+          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261015-15', s)
+          p.write_text(s, encoding='utf-8')
+          c=Path('assets/style.css')
+          x=c.read_text(encoding='utf-8')
+          x=re.sub(r'\.orbit-wrap\{\s*background-image:url\("ataturk-hero-v2\.webp"\)!important;\s*background-position:center bottom!important;\s*background-size:contain!important;\s*background-repeat:no-repeat!important;\s*\}', '.orbit-wrap{background-image:none!important;}', x, flags=re.S)
+          c.write_text(x, encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html assets/style.css
+          git diff --cached --quiet && exit 0
+          git commit -m 'Force exact Ataturk hero and bust cache'
+          git push
