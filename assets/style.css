@@ -8,6 +8,14 @@
   background-repeat:no-repeat!important;
 }
 
+/* Removed Ataturk quote must never be visible, even from stale cached JS */
+.ataturk-quote{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+
 /* 11_ Studios wordmark: wrapper has NO glow/background so no rectangle appears */
 .eyebrow{
   display:block!important;
