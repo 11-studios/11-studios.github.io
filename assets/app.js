@@ -1,6 +1,6 @@
 (()=>{
   const exact=document.createElement('script');
-  exact.src='assets/ataturk-exact.js?v=20261015-17';
+  exact.src='assets/ataturk-exact.js?v=20261015-18';
   exact.async=false;
   document.head.appendChild(exact);
 
