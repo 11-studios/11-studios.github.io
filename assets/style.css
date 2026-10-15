@@ -1,12 +1,7 @@
 @import url("style-base.css");
 
 /* Hero portrait */
-.orbit-wrap{
-  background-image:url("ataturk-hero-v2.webp")!important;
-  background-position:center bottom!important;
-  background-size:contain!important;
-  background-repeat:no-repeat!important;
-}
+.orbit-wrap{background-image:none!important;}
 
 /* Removed Ataturk quote must never be visible, even from stale cached JS */
 .ataturk-quote{
