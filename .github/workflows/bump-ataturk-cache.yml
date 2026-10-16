@@ -1,4 +1,4 @@
-name: Publish site v25
+name: Publish site v26
 on:
   push:
     paths:
@@ -10,27 +10,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Embed Ataturk image directly into index
+      - name: Fix hidden Ataturk portrait and bust cache
         run: |
           python - <<'PY'
           from pathlib import Path
-          import base64, re
-          raw = Path('assets/ataturk-final.jpg').read_bytes()
-          assert raw[:2] == b'\xff\xd8' and raw[-2:] == b'\xff\xd9', 'invalid JPEG'
-          uri = 'data:image/jpeg;base64,' + base64.b64encode(raw).decode('ascii')
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          tag = '<img class="brand-orbit hero-portrait" src="' + uri + '" alt="Atatürk" style="display:block!important;visibility:visible!important;opacity:1!important;width:520px!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:center bottom!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;filter:none!important;">'
-          s = re.sub(r'<img\s+class="brand-orbit hero-portrait"[^>]*>', lambda m: tag, s, count=1)
-          s = re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-25', s)
-          s = re.sub(r'assets/style\.css\?v=[^"\']+', 'assets/style.css?v=20261016-25', s)
-          p.write_text(s, encoding='utf-8')
+          import re
+
+          base = Path('assets/style-base.css')
+          s = base.read_text(encoding='utf-8')
+          s = s.replace('background:url("ataturk-hero-v2.webp") center bottom/contain no-repeat!important;', 'background:none!important;background-image:none!important;')
+          s = s.replace('.brand-orbit.hero-portrait{display:none!important}', '.brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important}')
+          base.write_text(s, encoding='utf-8')
+
+          css = Path('assets/style.css')
+          s = css.read_text(encoding='utf-8')
+          marker = '/* HERO VISIBILITY FIX V26 */'
+          if marker not in s:
+              s += '\n' + marker + '\n#top .hero-visual .orbit-wrap .brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:5!important;width:520px!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:center bottom!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;animation:none!important;filter:none!important}\n#top .hero-visual .orbit-wrap{background:none!important;background-image:none!important;overflow:visible!important}\n'
+          css.write_text(s, encoding='utf-8')
+
+          index = Path('index.html')
+          s = index.read_text(encoding='utf-8')
+          s = re.sub(r'assets/style\.css\?v=[^"\']+', 'assets/style.css?v=20261016-26', s)
+          s = re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-26', s)
+          index.write_text(s, encoding='utf-8')
+
+          app = Path('assets/app.js')
+          a = app.read_text(encoding='utf-8')
+          a = re.sub(r"const VERSION='[^']+'", "const VERSION='20261016-26'", a, count=1)
+          app.write_text(a, encoding='utf-8')
           PY
-      - name: Commit v25
+      - name: Commit v26
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html assets/style-base.css assets/style.css assets/app.js
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v25 embedded Ataturk portrait'
+          git commit -m 'Publish site v26 show Ataturk portrait'
           git push
