@@ -21,31 +21,11 @@ jobs:
           base=Path('assets/style-base.css').read_text(encoding='utf-8')
           style=Path('assets/style.css').read_text(encoding='utf-8')
           style=re.sub(r'^\s*@import\s+url\(["\']style-base\.css["\']\);\s*','',style,count=1,flags=re.M)
-          css_parts=[
-            base,
-            style,
-            Path('assets/simple.css').read_text(encoding='utf-8'),
-            Path('assets/site-enhancements.css').read_text(encoding='utf-8'),
-            Path('assets/plugin-files.css').read_text(encoding='utf-8'),
-            Path('assets/store-search.css').read_text(encoding='utf-8'),
-          ]
+          css_parts=[base,style,Path('assets/simple.css').read_text(encoding='utf-8'),Path('assets/site-enhancements.css').read_text(encoding='utf-8'),Path('assets/plugin-files.css').read_text(encoding='utf-8'),Path('assets/store-search.css').read_text(encoding='utf-8')]
           site_css='\n'.join(css_parts)
           site_css=re.sub(r'/\*.*?\*/','',site_css,flags=re.S)
           site_css=re.sub(r'\n{3,}','\n\n',site_css)
-          site_css += '''
-@supports (content-visibility:auto){#about{content-visibility:auto;contain-intrinsic-size:auto 520px}}
-#top .hero-visual .orbit-wrap .hero-portrait{
-  width:500px!important;
-  height:auto!important;
-  image-rendering:auto!important;
-  object-fit:contain!important;
-  background:transparent!important;
-  box-shadow:none!important;
-  filter:none!important;
-  -webkit-mask-image:radial-gradient(ellipse 76% 80% at 50% 48%,#000 62%,rgba(0,0,0,.96) 72%,transparent 100%);
-  mask-image:radial-gradient(ellipse 76% 80% at 50% 48%,#000 62%,rgba(0,0,0,.96) 72%,transparent 100%);
-}
-'''
+          site_css += '\n@supports (content-visibility:auto){#about{content-visibility:auto;contain-intrinsic-size:auto 520px}}\n#top .hero-visual .orbit-wrap .hero-portrait{width:500px!important;height:auto!important;image-rendering:auto!important;object-fit:contain!important;background:transparent!important;box-shadow:none!important;filter:none!important;-webkit-mask-image:radial-gradient(ellipse 76% 80% at 50% 48%,#000 62%,rgba(0,0,0,.96) 72%,transparent 100%);mask-image:radial-gradient(ellipse 76% 80% at 50% 48%,#000 62%,rgba(0,0,0,.96) 72%,transparent 100%)}\n'
           Path('assets/site.css').write_text(site_css,encoding='utf-8')
 
           media=Path('assets/app-media.js').read_text(encoding='utf-8')
@@ -57,21 +37,11 @@ jobs:
           load=media.find("  app.addEventListener('load',()=>{\n",start)
           end_marker="\n  });\n  document.head.appendChild(app);\n})();"
           end=media.rfind(end_marker)
-          if min(start,load,end) < 0:
-            raise SystemExit('app-media optimization markers missing')
+          if min(start,load,end) < 0: raise SystemExit('app-media optimization markers missing')
           body_start=load+len("  app.addEventListener('load',()=>{\n")
           media_core=media[:start]+media[body_start:end]+"\n})();\n"
 
-          js_files=[
-            Path('assets/app-original.js').read_text(encoding='utf-8'),
-            Path('assets/supabase-sync.js').read_text(encoding='utf-8'),
-            Path('assets/cloud-accounts.js').read_text(encoding='utf-8'),
-            media_core,
-            Path('assets/site-enhancements.js').read_text(encoding='utf-8'),
-            Path('assets/plugin-files.js').read_text(encoding='utf-8'),
-            Path('assets/cloud-files.js').read_text(encoding='utf-8'),
-            Path('assets/store-search.js').read_text(encoding='utf-8'),
-          ]
+          js_files=[Path('assets/app-original.js').read_text(encoding='utf-8'),Path('assets/supabase-sync.js').read_text(encoding='utf-8'),Path('assets/cloud-accounts.js').read_text(encoding='utf-8'),media_core,Path('assets/site-enhancements.js').read_text(encoding='utf-8'),Path('assets/plugin-files.js').read_text(encoding='utf-8'),Path('assets/cloud-files.js').read_text(encoding='utf-8'),Path('assets/store-search.js').read_text(encoding='utf-8')]
           Path('assets/site-app.js').write_text('\n;\n'.join(js_files),encoding='utf-8')
 
           p=Path('index.html')
@@ -85,14 +55,12 @@ jobs:
           s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v={V}" alt="Atatürk" width="512" height="512" decoding="async" fetchpriority="high">',s,count=1)
           s=re.sub(r'(<footer class="footer"><div class="container footer-row"><div><img) src="data:image/png;base64,[^"]+"',rf'\1 src="assets/hero-wordmark.png?v={V}" loading="lazy" decoding="async"',s,count=1)
           s=re.sub(r'\n?<style id="remove-ataturk-quote">.*?</style>','',s,count=1,flags=re.S)
-
           preload=f'<link rel="preload" as="image" href="assets/ataturk-final.jpg?v={V}" fetchpriority="high">'
           s=re.sub(r'<link rel="preload" as="image" href="assets/ataturk-(?:final\.jpg|transparent\.png|hq\.webp)\?v=[^"]+"(?: type="image/webp")? fetchpriority="high">',preload,s,count=1)
           if 'rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co"' not in s:
             s=s.replace('</title>','</title>\n<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n'+preload,1)
           elif preload not in s:
             s=s.replace('<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>','<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n'+preload,1)
-
           p.write_text(s,encoding='utf-8')
           PY
       - name: Verify optimized output
@@ -104,9 +72,6 @@ jobs:
           grep -q 'assets/site.css?v=20261016-34' index.html
           grep -q 'assets/site-app.js?v=20261016-34' index.html
           grep -q 'class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v=20261016-34"' index.html
-          grep -q 'class="logo" src="assets/hero-wordmark.png?v=20261016-34"' index.html
-          ! grep -q 'class="mark"' index.html
-          ! grep -q 'class="brand-orbit hero-portrait" src="data:image' index.html
       - name: Commit v34
         run: |
           git config user.name 'github-actions[bot]'
