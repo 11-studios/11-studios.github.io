@@ -8,14 +8,14 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>11_ Studios • Minecraft Plugins</title>
 <link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>
-<link rel="preload" as="image" href="assets/ataturk-final.jpg?v=20261016-31" fetchpriority="high">
-<link rel="icon" href="assets/site-icon.png?v=20261016-31" type="image/png">
-<link rel="stylesheet" href="assets/site.css?v=20261016-31">
+<link rel="preload" as="image" href="assets/ataturk-transparent.png?v=20261016-32" fetchpriority="high">
+<link rel="icon" href="assets/site-icon.png?v=20261016-32" type="image/png">
+<link rel="stylesheet" href="assets/site.css?v=20261016-32">
 </head>
 <body>
 <header class="topbar">
   <div class="container nav">
-    <a class="brand" href="#top" aria-label="11_ Studios"><img class="logo" src="assets/hero-wordmark.png?v=20261016-31" alt="11_ Studios" decoding="async" fetchpriority="high"></a>
+    <a class="brand" href="#top" aria-label="11_ Studios"><img class="logo" src="assets/hero-wordmark.png?v=20261016-32" alt="11_ Studios" decoding="async" fetchpriority="high"></a>
     <nav class="navlinks">
       <a href="#plugins" id="navPlugins">Pluginler</a><a href="#about" id="navAbout">Hakkında</a>
       <select class="lang-select" id="languageSelect" aria-label="Dil seçimi"><option value="tr">🇹🇷 Türkçe</option><option value="en">🇬🇧 English</option></select>
@@ -30,14 +30,14 @@
 <main id="top">
 <section class="container hero">
   <div class="hero-copy">
-    <div class="eyebrow" id="heroEyebrow" aria-label="11_ Studios"><img class="hero-wordmark-img" src="assets/hero-wordmark.png?v=20261016-31" alt="11_ Studios" data-ready="1" decoding="async"></div>
+    <div class="eyebrow" id="heroEyebrow" aria-label="11_ Studios"><img class="hero-wordmark-img" src="assets/hero-wordmark.png?v=20261016-32" alt="11_ Studios" data-ready="1" decoding="async"></div>
     <h1 id="heroTitle">Bi kaç plugin var istersen kullan.</h1>
     <p id="heroDesc">Kendi sunucularımız için yaptığımız pluginleri burada topluyoruz. İşine yararsa al kullan.</p>
     <div class="actions"><a class="btn purple" href="#plugins"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAo0lEQVR4XmNgoBRoB0/9j4zR5QkCkCbrxG3/bef9J88AcRXv/yAMAuiuIQaDDVFWVv5/58MPsCvg+DwWDJXzKLoIxiCL4QaA8OxVG4imYS6HewUkceDcTbACYmm4ZpgBIG+QQmMYADMZBPDROF0A8htIEh8AycPCAsMAYjBMM1YDCLkAp+0wA2CGINuCSxxdPxiAJEAhjB7KuMQxALqthMSpAgCqunhBYxfkDwAAAABJRU5ErkJggg==" alt=""> <span id="heroBrowseText">Pluginlere bak</span></a><button class="btn ghost" id="heroLogin"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAhklEQVR4XmNgoBVwcPH+jw2jq8MJQIofvfyOgkkyQFVDD65x1/4TYAwSQ1eHEyAbAGLDMLo6nADZAJgh6GrwAmwuQFeDFSA799KNx2BMkhewhT5JsQAzANlWmHeINgDmbOQwAIkRbQBFLkAOPHRMVCCCFIWn1P0vqe1DwSAxog3Ah9HVUwwAh7nssPooE6wAAAAASUVORK5CYII=" alt=""> <span id="heroLoginText">Hesabına gir</span></button></div>
   </div>
   <div class="hero-visual" aria-hidden="true">
     <div class="orbit-wrap">
-      <img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v=20261016-31" alt="Atatürk" width="512" height="512" decoding="async" fetchpriority="high">
+      <img class="brand-orbit hero-portrait" src="assets/ataturk-transparent.png?v=20261016-32" alt="Atatürk" width="320" height="302" decoding="async" fetchpriority="high">
     </div>
   </div>
 </section>
@@ -77,5 +77,5 @@
 <div class="modal" id="registerModal"><div class="dialog"><div class="dialog-head"><h3 id="registerTitle">Kayıt ol</h3><button class="close" data-close="registerModal">×</button></div><form class="dialog-body" id="registerForm"><div class="field"><label id="regUserLabel">Kullanıcı adı</label><input id="regUser" minlength="3" maxlength="24" required></div><div class="field"><label id="regPassLabel">Şifre</label><input id="regPass" type="password" minlength="6" required></div><div class="field"><label id="regPass2Label">Şifre tekrar</label><input id="regPass2" type="password" minlength="6" required></div><div class="form-msg" id="registerMsg"></div><div class="dialog-footer"><button type="button" class="btn ghost" id="registerToLogin" data-switch="loginModal">Giriş yap</button><button class="btn purple" id="registerSubmit">Hesap oluştur</button></div></form></div></div>
 <div class="modal" id="adminModal"><div class="dialog wide"><div class="dialog-head"><h3>11_ Studios • Admin Panel</h3><button class="close" data-close="adminModal">×</button></div><div class="dialog-body"><div class="notice" id="adminNotice">Yönetim verileri bu tarayıcıda saklanır. GitHub Pages sunucu tarafı veritabanı sağlamadığından, ortak ve kalıcı yönetim için backend entegrasyonu gerekir.</div><div class="stats"><div class="stat"><b id="statPlugins">0</b><span>Plugin</span></div><div class="stat"><b id="statFree">0</b><span id="statFreeLabel">Ücretsiz</span></div><div class="stat"><b id="statPaid">0</b><span id="statPaidLabel">Premium</span></div></div><div class="admin-layout"><div class="admin-box"><h4 id="formTitle">Yeni plugin ekle</h4><form id="pluginForm"><input type="hidden" id="editId"><div class="form-row"><div class="field"><label id="pNameLabel">Plugin adı</label><input id="pName" placeholder="11_ Plugin" maxlength="60" required></div><div class="field"><label id="pVersionLabel">Sürüm</label><input id="pVersion" placeholder="1.0.0" maxlength="24" required></div></div><div class="form-row"><div class="field"><label id="pCategoryLabel">Kategori</label><select id="pCategory"><option value="utility">Araçlar</option><option value="security">Güvenlik</option><option value="visual">Görsel</option><option value="other">Diğer</option></select></div><div class="field"><label id="pPriceLabel">Fiyat (₺)</label><input id="pPrice" type="number" min="0" step="1" value="0"></div></div><div class="field"><label id="pDescLabel">Açıklama</label><textarea id="pDesc" maxlength="500" placeholder="Plugin ne yapıyor?"></textarea></div><div class="field"><label id="pUrlLabel">İndirme / satış linki</label><input id="pUrl" type="url" maxlength="500" inputmode="url" placeholder="https://github.com/.../releases"></div><div class="field"><label id="pIconLabel">Plugin ikonu</label><input type="hidden" id="pIcon"><div class="icon-picker" id="iconPicker"></div></div><div class="dialog-footer"><button class="btn ghost" type="button" id="cancelEdit" style="display:none">Vazgeç</button><button class="btn purple" id="savePluginBtn" type="submit">Kaydet</button></div></form></div><div class="admin-box"><h4 id="publishedPluginsTitle">Yayındaki pluginler</h4><div class="admin-list" id="adminList"></div></div></div></div></div></div>
 <div class="toast" id="toast"></div>
-<script src="assets/site-app.js?v=20261016-31" defer></script>
+<script src="assets/site-app.js?v=20261016-32" defer></script>
 </body></html>
