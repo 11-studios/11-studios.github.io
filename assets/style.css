@@ -37,3 +37,7 @@
 .detail-image-panel{margin:20px 0 22px;padding:0!important;overflow:hidden}.detail-image-panel[hidden]{display:none!important}.detail-product-image{display:block;width:100%;max-height:560px;object-fit:cover;background:#07050b}
 .detail-video-panel{margin-top:22px}.plugin-video-shell{margin-top:14px;width:100%;border:1px solid rgba(203,167,255,.18);border-radius:18px;overflow:hidden;background:rgba(7,5,11,.78)}.plugin-video-frame,.plugin-video-file{display:block;width:100%;aspect-ratio:16/9;border:0;background:#050408;object-fit:contain}.plugin-video-frame[hidden],.plugin-video-file[hidden],.plugin-video-link[hidden]{display:none!important}.plugin-video-link{margin:18px;width:max-content}
 .made-by-sems{width:100%;padding:14px 18px 18px;text-align:center;font-size:12px;letter-spacing:.08em;color:#978ca3;border-top:1px solid rgba(203,167,255,.08);background:rgba(5,4,8,.5)}
+
+/* HERO VISIBILITY FIX V26 */
+#top .hero-visual .orbit-wrap .brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:5!important;width:520px!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:center bottom!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;animation:none!important;filter:none!important}
+#top .hero-visual .orbit-wrap{background:none!important;background-image:none!important;overflow:visible!important}

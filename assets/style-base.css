@@ -39,9 +39,9 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.05;ba
   width:540px!important;
   height:520px!important;
   transform:none!important;
-  background:url("ataturk-hero-v2.webp") center bottom/contain no-repeat!important;
+  background:none!important;background-image:none!important;
 }
-.brand-orbit.hero-portrait{display:none!important}
+.brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important}
 .ring,.ring.r2,.ring-dot,.float-card{display:none!important}
 @media(max-width:860px){
   .hero-visual{height:430px!important}
