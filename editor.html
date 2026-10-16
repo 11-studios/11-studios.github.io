@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09070d">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://mzrnuiunfxaendnrigzk.supabase.co; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<title>11_ Studios • Editor</title>
+<link rel="stylesheet" href="assets/editor-v37.css?v=20261016-37">
+</head>
+<body>
+<div id="authGate" class="editor-auth">
+  <div class="editor-auth-box"><h1>Editor</h1><p id="authText">Admin oturumu kontrol ediliyor…</p><a href="./">Siteye dön</a></div>
+</div>
+<div id="editorApp" class="editor-app hidden">
+  <aside class="editor-sidebar">
+    <div class="editor-brand"><strong>11_ Editor</strong><a class="editor-back" href="./">← Siteye dön</a></div>
+    <section class="editor-card">
+      <h2>Yeni öğe</h2>
+      <div class="editor-field"><label for="sectionSelect">Bölüm</label><select id="sectionSelect"><option value="hero">Ana bölüm</option><option value="plugins">Pluginler</option><option value="about">Hakkında</option><option value="footer">Footer</option></select></div>
+      <div class="editor-actions"><button class="editor-btn" id="addTextBtn" type="button">+ Yazı</button><button class="editor-btn" id="addImageBtn" type="button">+ Görsel</button></div>
+      <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      <p class="editor-note">Eklediğin öğeleri sağdaki canlı önizlemede sürükleyebilirsin.</p>
+    </section>
+    <section class="editor-card">
+      <h2>Seçili öğe</h2>
+      <div id="selectedChip" class="selected-chip">Öğe seçilmedi</div>
+      <div id="properties"><div class="prop-empty">Önizlemeden bir öğeye tıkla veya yeni bir öğe ekle.</div></div>
+      <button class="editor-btn danger" id="deleteBtn" type="button" disabled>Seçileni sil</button>
+    </section>
+    <section class="editor-card">
+      <h2>Kaydet</h2>
+      <button class="editor-btn primary" id="saveBtn" type="button">Tüm cihazlara kaydet</button>
+      <div id="saveStatus" class="editor-status">Henüz kaydedilmemiş değişiklik yok.</div>
+    </section>
+  </aside>
+  <main class="editor-main">
+    <div class="editor-topbar"><div><strong>Canlı site önizlemesi</strong><div class="hint">Sürükle, düzenle ve kaydet. Ham HTML/JS eklenmez.</div></div><button class="editor-btn" id="reloadBtn" type="button">Buluttan yenile</button></div>
+    <div class="editor-frame-wrap"><iframe id="siteFrame" class="editor-frame" src="./?editorPreview=1&v=37" title="Site önizlemesi"></iframe></div>
+  </main>
+</div>
+<script src="assets/editor-v37.js?v=20261016-37" defer></script>
+</body>
+</html>
