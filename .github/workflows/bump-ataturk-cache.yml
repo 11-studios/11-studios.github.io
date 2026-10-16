@@ -1,4 +1,4 @@
-name: Publish site v24
+name: Publish site v25
 on:
   push:
     paths:
@@ -10,32 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build exact Ataturk image and switch site to v24
+      - name: Embed Ataturk image directly into index
         run: |
           python - <<'PY'
           from pathlib import Path
-          import base64, re, hashlib
-          parts = [
-              Path('assets/ataturk-final-1.b64').read_text(encoding='utf-8').strip(),
-              Path('assets/ataturk-final-2.b64').read_text(encoding='utf-8').strip(),
-              Path('assets/ataturk-final-3.b64').read_text(encoding='utf-8').strip(),
-          ]
-          b64 = ''.join(parts)
-          raw = base64.b64decode(b64, validate=True)
+          import base64, re
+          raw = Path('assets/ataturk-final.jpg').read_bytes()
           assert raw[:2] == b'\xff\xd8' and raw[-2:] == b'\xff\xd9', 'invalid JPEG'
-          assert hashlib.sha256(raw).hexdigest() == '53eb825d0ed779b95fb371d3ba39675c2657c4f927a52da0cf6e21ccb629a3d1', 'image checksum mismatch'
-          Path('assets/ataturk-final.jpg').write_bytes(raw)
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-24', s)
-          s=re.sub(r'<img\s+class="brand-orbit hero-portrait"[^>]*>', '<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v=20261016-24" alt="Atatürk">', s, count=1)
-          p.write_text(s,encoding='utf-8')
+          uri = 'data:image/jpeg;base64,' + base64.b64encode(raw).decode('ascii')
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<img class="brand-orbit hero-portrait" src="' + uri + '" alt="Atatürk" style="display:block!important;visibility:visible!important;opacity:1!important;width:520px!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:center bottom!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;filter:none!important;">'
+          s = re.sub(r'<img\s+class="brand-orbit hero-portrait"[^>]*>', lambda m: tag, s, count=1)
+          s = re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-25', s)
+          s = re.sub(r'assets/style\.css\?v=[^"\']+', 'assets/style.css?v=20261016-25', s)
+          p.write_text(s, encoding='utf-8')
           PY
-      - name: Commit v24
+      - name: Commit v25
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/ataturk-final.jpg
+          git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v24 exact Ataturk portrait'
+          git commit -m 'Publish site v25 embedded Ataturk portrait'
           git push
