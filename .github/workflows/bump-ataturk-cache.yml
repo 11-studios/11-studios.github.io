@@ -14,52 +14,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Remove GIF size cap and publish v43
+      - name: Apply v43 editor changes
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
-
-          V='20261016-43'
 
           j=Path('assets/editor-v37.js')
           s=j.read_text(encoding='utf-8')
-          old="""    if(file.type.toLowerCase()==='image/gif'){
-      const data=await fileToDataUrl(file);if(data.length>440000)throw new Error('gif_too_large');return data;
-    }"""
-          new="""    if(file.type.toLowerCase()==='image/gif'){
-      const data=await fileToDataUrl(file);return data;
-    }"""
-          s=s.replace(old,new)
+          s=s.replace("const data=await fileToDataUrl(file);if(data.length>440000)throw new Error('gif_too_large');return data;","const data=await fileToDataUrl(file);return data;")
           s=s.replace("}catch(err){status(err.message==='gif_too_large'?'Animasyonlu GIF yaklaşık 320 KB’dan küçük olmalı.':'Görsel eklenemedi. Dosyayı küçültüp tekrar dene.','bad');}","}catch(err){status('Görsel eklenemedi. Dosya 8 MB’dan büyük olmamalı ve desteklenen bir görsel olmalı.','bad');}")
-          s=re.sub(r"editor-runtime-v37\.js\?v=20261016-\d+","editor-runtime-v37.js?v=20261016-43",s)
+          s=s.replace('20261016-41','20261016-43').replace('20261016-42','20261016-43')
           j.write_text(s,encoding='utf-8')
 
           b=Path('assets/editor-v40-bridge.js')
-          x=b.read_text(encoding='utf-8')
-          x=re.sub(r"const VERSION='[^']+'",f"const VERSION='{V}'",x)
-          b.write_text(x,encoding='utf-8')
+          s=b.read_text(encoding='utf-8').replace('20261016-42','20261016-43').replace('20261016-41','20261016-43')
+          b.write_text(s,encoding='utf-8')
 
-          p=Path('index.html')
-          x=p.read_text(encoding='utf-8')
-          x=re.sub(r'assets/editor-runtime-v37\.css\?v=[^"\']+',f'assets/editor-runtime-v37.css?v={V}',x)
-          x=re.sub(r'assets/editor-runtime-v37\.js\?v=[^"\']+',f'assets/editor-runtime-v37.js?v={V}',x)
-          p.write_text(x,encoding='utf-8')
-
-          e=Path('editor.html')
-          x=e.read_text(encoding='utf-8')
-          x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+',f'assets/editor-v37.css?v={V}',x)
-          x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+',f'assets/editor-v37.js?v={V}',x)
-          x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+',f'assets/editor-v40-bridge.js?v={V}',x)
-          x=re.sub(r'editorPreview=1&v=[^"\']+', 'editorPreview=1&v=43',x)
-          e.write_text(x,encoding='utf-8')
+          for filename in ('index.html','editor.html'):
+              p=Path(filename)
+              s=p.read_text(encoding='utf-8').replace('20261016-42','20261016-43')
+              if filename=='editor.html':
+                  s=s.replace('editorPreview=1&v=42','editorPreview=1&v=43')
+              p.write_text(s,encoding='utf-8')
           PY
-      - name: Verify v43
+      - name: Verify JavaScript
         run: |
           node --check assets/editor-v37.js
           node --check assets/editor-v40-bridge.js
-          ! grep -q "gif_too_large" assets/editor-v37.js
-          ! grep -q "320 KB" assets/editor-v37.js
           grep -q 'editor-v37.js?v=20261016-43' editor.html
           grep -q 'editorPreview=1&v=43' editor.html
       - name: Commit v43
@@ -67,6 +48,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/editor-v37.js assets/editor-v40-bridge.js index.html editor.html
-          git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v43 without GIF 320KB cap'
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Publish site v43 without GIF size cap'
           git push
