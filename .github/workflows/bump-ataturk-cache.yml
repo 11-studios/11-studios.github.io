@@ -18,13 +18,11 @@ jobs:
 
           V='20261016-32'
 
-          # Build the transparent Ataturk PNG from the verified source.
-          raw=base64.b64decode(Path('assets/ataturk-transparent.b64').read_text(encoding='utf-8').strip(), validate=True)
-          assert hashlib.sha256(raw).hexdigest() == 'ddda2c4eb3d5bbf08bbdf620b1e1d8015e3982d55fe961574f60cab1785478e6'
+          raw=base64.b64decode(Path('assets/ataturk-transparent-small.b64').read_text(encoding='utf-8').strip(), validate=True)
+          assert hashlib.sha256(raw).hexdigest() == '3ef5cdcc6503556d9c1204e19c9fdc4bd8c1f40b8b94cc41285daeb6f1563459'
           assert raw.startswith(b'\x89PNG\r\n\x1a\n')
           Path('assets/ataturk-transparent.png').write_bytes(raw)
 
-          # Build one CSS file from the existing feature-safe sources.
           base=Path('assets/style-base.css').read_text(encoding='utf-8')
           style=Path('assets/style.css').read_text(encoding='utf-8')
           style=re.sub(r'^\s*@import\s+url\(["\']style-base\.css["\']\);\s*','',style,count=1,flags=re.M)
@@ -42,7 +40,6 @@ jobs:
           site_css += '\n@supports (content-visibility:auto){#about{content-visibility:auto;contain-intrinsic-size:auto 520px}}\n'
           Path('assets/site.css').write_text(site_css,encoding='utf-8')
 
-          # Convert app-media into bundle-safe code: static cached images, no nested script request.
           media=Path('assets/app-media.js').read_text(encoding='utf-8')
           media=media.replace("const heroPromise=loadParts('assets/final-wordmark',8);", "const heroPromise=Promise.resolve('static');")
           media=media.replace("const faviconPromise=loadParts('assets/final-favicon',4);", "const faviconPromise=Promise.resolve('static');")
@@ -57,7 +54,6 @@ jobs:
           body_start=load+len("  app.addEventListener('load',()=>{\n")
           media_core=media[:start]+media[body_start:end]+"\n})();\n"
 
-          # One JavaScript request while preserving original execution order and features.
           js_files=[
             Path('assets/app-original.js').read_text(encoding='utf-8'),
             Path('assets/supabase-sync.js').read_text(encoding='utf-8'),
@@ -72,15 +68,13 @@ jobs:
 
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-
           s=re.sub(r'<link rel="stylesheet" href="assets/(?:style|site)\.css\?v=[^"]+">',f'<link rel="stylesheet" href="assets/site.css?v={V}">',s,count=1)
           s=re.sub(r'<script src="assets/(?:app|site-app)\.js\?v=[^"]+"(?: defer)?></script>',f'<script src="assets/site-app.js?v={V}" defer></script>',s,count=1)
-
           s=re.sub(r'<link rel="icon"[^>]*>',f'<link rel="icon" href="assets/site-icon.png?v={V}" type="image/png">',s,count=1)
           s=re.sub(r'<img class="logo"[^>]*>',f'<img class="logo" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" decoding="async" fetchpriority="high">',s,count=1)
           s=re.sub(r'<img class="mark"[^>]*>','',s,count=1)
           s=re.sub(r'<div class="eyebrow" id="heroEyebrow"[^>]*>.*?</div>',f'<div class="eyebrow" id="heroEyebrow" aria-label="11_ Studios"><img class="hero-wordmark-img" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" data-ready="1" decoding="async"></div>',s,count=1,flags=re.S)
-          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-transparent.png?v={V}" alt="Atatürk" width="640" height="604" decoding="async" fetchpriority="high">',s,count=1)
+          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-transparent.png?v={V}" alt="Atatürk" width="320" height="302" decoding="async" fetchpriority="high">',s,count=1)
           s=re.sub(r'(<footer class="footer"><div class="container footer-row"><div><img) src="data:image/png;base64,[^"]+"',rf'\1 src="assets/hero-wordmark.png?v={V}" loading="lazy" decoding="async"',s,count=1)
           s=re.sub(r'\n?<style id="remove-ataturk-quote">.*?</style>','',s,count=1,flags=re.S)
 
