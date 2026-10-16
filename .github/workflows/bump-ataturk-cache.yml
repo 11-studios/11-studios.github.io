@@ -1,12 +1,13 @@
-name: Publish site v43
+name: Publish site v44
 on:
   push:
     paths:
       - '.github/workflows/bump-ataturk-cache.yml'
       - 'assets/editor-v37.js'
+      - 'assets/editor-v37.css'
+      - 'assets/editor-runtime-v37.js'
+      - 'assets/editor-runtime-v37.css'
       - 'assets/editor-v40-bridge.js'
-      - 'editor.html'
-      - 'index.html'
 permissions:
   contents: write
 jobs:
@@ -14,40 +15,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply v43 editor changes
+      - name: Pin v44 editor assets
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+          V='20261016-44'
 
-          j=Path('assets/editor-v37.js')
-          s=j.read_text(encoding='utf-8')
-          s=s.replace("const data=await fileToDataUrl(file);if(data.length>440000)throw new Error('gif_too_large');return data;","const data=await fileToDataUrl(file);return data;")
-          s=s.replace("}catch(err){status(err.message==='gif_too_large'?'Animasyonlu GIF yaklaşık 320 KB’dan küçük olmalı.':'Görsel eklenemedi. Dosyayı küçültüp tekrar dene.','bad');}","}catch(err){status('Görsel eklenemedi. Dosya 8 MB’dan büyük olmamalı ve desteklenen bir görsel olmalı.','bad');}")
-          s=s.replace('20261016-41','20261016-43').replace('20261016-42','20261016-43')
-          j.write_text(s,encoding='utf-8')
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=re.sub(r'assets/editor-runtime-v37\.css\?v=[^"\']+', f'assets/editor-runtime-v37.css?v={V}', s)
+          s=re.sub(r'assets/editor-runtime-v37\.js\?v=[^"\']+', f'assets/editor-runtime-v37.js?v={V}', s)
+          p.write_text(s,encoding='utf-8')
 
-          b=Path('assets/editor-v40-bridge.js')
-          s=b.read_text(encoding='utf-8').replace('20261016-42','20261016-43').replace('20261016-41','20261016-43')
-          b.write_text(s,encoding='utf-8')
-
-          for filename in ('index.html','editor.html'):
-              p=Path(filename)
-              s=p.read_text(encoding='utf-8').replace('20261016-42','20261016-43')
-              if filename=='editor.html':
-                  s=s.replace('editorPreview=1&v=42','editorPreview=1&v=43')
-              p.write_text(s,encoding='utf-8')
+          e=Path('editor.html')
+          x=e.read_text(encoding='utf-8')
+          x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+', f'assets/editor-v37.css?v={V}', x)
+          x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+', f'assets/editor-v37.js?v={V}', x)
+          x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+', f'assets/editor-v40-bridge.js?v={V}', x)
+          x=re.sub(r'editorPreview=1&v=[^"\']+', 'editorPreview=1&v=44', x)
+          e.write_text(x,encoding='utf-8')
           PY
-      - name: Verify JavaScript
+      - name: Verify v44
         run: |
           node --check assets/editor-v37.js
+          node --check assets/editor-runtime-v37.js
           node --check assets/editor-v40-bridge.js
-          grep -q 'editor-v37.js?v=20261016-43' editor.html
-          grep -q 'editorPreview=1&v=43' editor.html
-      - name: Commit v43
+          grep -q 'editor-v37.js?v=20261016-44' editor.html
+          grep -q 'editorPreview=1&v=44' editor.html
+          grep -q 'editor-runtime-v37.js?v=20261016-44' index.html
+      - name: Commit cache refs
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/editor-v37.js assets/editor-v40-bridge.js index.html editor.html
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Publish site v43 without GIF size cap'
+          git add index.html editor.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Publish site v44 editor visibility fixes'
           git push
