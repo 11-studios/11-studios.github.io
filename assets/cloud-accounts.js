@@ -19,11 +19,8 @@
 
   async function rpc(name,payload){
     const c=cfg();
-    const r=await fetch(`${c.url}/rest/v1/rpc/${name}`,{method:'POST',headers:headers(),body:JSON.stringify(payload||{}),cache:'no-store'});
-    const text=await r.text();
-    let data=null;try{data=text?JSON.parse(text):null;}catch{data=text;}
-    if(!r.ok){const err=new Error(`${name}:${r.status}`);err.status=r.status;err.payload=data;err.raw=text;throw err;}
-    return data;
+    if(typeof c.api!=='function')throw new Error('cloud-api-not-ready');
+    return c.api(name,payload||{});
   }
 
   const safeUsers=()=>{try{const x=JSON.parse(localStorage.getItem('11_users')||'[]');return Array.isArray(x)?x:[];}catch{return[];}};
