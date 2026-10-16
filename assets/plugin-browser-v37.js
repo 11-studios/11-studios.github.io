@@ -6,7 +6,7 @@
   let installed=false;
 
   const en=()=>document.getElementById('languageSelect')?.value==='en';
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
   const money=v=>Number(v)>0?`${Number(v).toLocaleString(en()?'en-US':'tr-TR')} ₺`:(en()?'Free':'Ücretsiz');
   const category=v=>({utility:en()?'Tools':'Araçlar',security:en()?'Security':'Güvenlik',visual:en()?'Visual':'Görsel',other:en()?'Other':'Diğer'})[v]||(en()?'Other':'Diğer');
   const safeImage=p=>{
@@ -60,7 +60,8 @@
     </div>`;
     const kicker=document.getElementById('storeKicker');if(kicker)kicker.textContent='11_ Studios';
     const title=document.getElementById('storeTitle');if(title)title.textContent=en()?'Plugins':'Pluginler';
-    const desc=document.getElementById('storeDesc');if(desc)desc.textContent=en()?'Plugins we publish for Minecraft servers.':'Minecraft sunucuları için yayınladığımız pluginler.';
+    const desc=document.getElementById('storeDesc');if(desc){desc.textContent='';desc.hidden=true;}
+    const about=document.getElementById('aboutDesc');if(about){about.textContent='';about.hidden=true;}
     installSearch();
     return true;
   }
@@ -82,11 +83,11 @@
   }
   function rowHtml(p){
     const paid=Number(p.price)>0;const active=p.id===selectedId?' is-active':'';
-    const desc=String(p.desc||'').slice(0,180);
+    const desc=String(p.desc||'').slice(0,220);
     return `<article class="plugin-card plugin-list-row${active}" data-plugin-id="${esc(p.id)}" tabindex="0">
       <div class="plugin-list-image"><img src="${esc(safeImage(p))}" alt="${esc(p.name)}" loading="lazy"></div>
-      <div class="plugin-list-copy"><div class="plugin-list-name">${esc(p.name)}</div><div class="plugin-list-meta">v${esc(p.version||'1.0.0')} · ${esc(category(p.category))}</div><p>${esc(desc|| (en()?'No description.':'Açıklama yok.'))}</p></div>
-      <div class="plugin-list-action"><strong class="${paid?'is-paid':'is-free'}">${esc(money(p.price))}</strong><button class="btn small ghost plugin-open-btn" type="button" data-plugin-open="${esc(p.id)}">${paid?(en()?'View':'İncele'):(en()?'Download':'İndir')}</button></div>
+      <div class="plugin-list-copy"><div class="plugin-list-name">${esc(p.name)}</div><div class="plugin-list-meta">v${esc(p.version||'1.0.0')} · ${esc(category(p.category))}</div><p>${esc(desc||(en()?'No description.':'Açıklama yok.'))}</p></div>
+      <div class="plugin-list-action"><strong class="${paid?'is-paid':'is-free'}">${esc(money(p.price))}</strong></div>
     </article>`;
   }
   function videoHtml(p){
@@ -102,7 +103,7 @@
     const fileInfo=!paid&&p.downloadFileName?`<span>${esc(p.downloadFileName)}</span>`:'';
     el.innerHTML=`<div class="plugin-preview-media"><img src="${esc(safeImage(p))}" alt="${esc(p.name)}"></div>
       <div class="plugin-preview-head"><div><span class="plugin-preview-kicker">${esc(category(p.category))}</span><h3>${esc(p.name)}</h3><div class="plugin-preview-meta">v${esc(p.version||'1.0.0')} · 11_ Studios</div></div><strong class="plugin-preview-price ${paid?'is-paid':'is-free'}">${esc(money(p.price))}</strong></div>
-      <p class="plugin-preview-description">${esc(p.desc|| (en()?'No description added.':'Açıklama eklenmemiş.'))}</p>
+      <p class="plugin-preview-description">${esc(p.desc||(en()?'No description added.':'Açıklama eklenmemiş.'))}</p>
       ${videoHtml(p)}
       <div class="plugin-preview-bottom"><div class="plugin-preview-file">${fileInfo}</div><button class="btn purple plugin-preview-action" id="pluginPreviewAction" type="button">${paid?(en()?'Purchase':'Satın al'):(en()?'Download':'İndir')}</button></div>`;
     document.getElementById('pluginPreviewAction')?.addEventListener('click',()=>{
@@ -123,10 +124,9 @@
   function bindRows(){
     document.querySelectorAll('.plugin-list-row').forEach(row=>{
       const choose=()=>selectPlugin(row.dataset.pluginId||'');
-      row.addEventListener('click',e=>{if(e.target.closest('button'))return;choose();});
+      row.addEventListener('click',choose);
       row.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}});
     });
-    document.querySelectorAll('[data-plugin-open]').forEach(b=>b.addEventListener('click',()=>selectPlugin(b.dataset.pluginOpen||'')));
   }
   function selectPlugin(id){
     if(!id)return;selectedId=id;bumpView(id);
