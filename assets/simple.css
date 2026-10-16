@@ -1,0 +1,23 @@
+/* Simpler 11_ Studios skin: less glow, less motion, flatter layout. */
+body{background:#09080b!important}
+body:before,.plugin-detail-page:before,.market-surface:before,.market-surface:after,.plugin-card:before{display:none!important}
+.topbar{background:rgba(9,8,11,.96)!important;backdrop-filter:none!important;border-bottom:1px solid #242027!important}
+.nav{height:68px!important}.navlinks{gap:2px!important}.navlinks a,.nav-btn{border-radius:7px!important}.navlinks a:hover,.nav-btn:hover{background:#151217!important}
+.lang-select,.user-chip{border-radius:7px!important;background-color:#100e12!important}
+.user-dot{box-shadow:none!important}
+.hero{min-height:520px!important;padding:64px 0 58px!important;gap:42px!important}.hero-copy,.hero-visual{animation:none!important}.hero h1{font-size:clamp(40px,6vw,66px)!important;line-height:1.02!important;letter-spacing:-.045em!important;margin:18px 0!important}.hero p{font-size:16px!important;line-height:1.65!important;color:#aaa2b1!important;max-width:600px!important}
+.eyebrow .hero-wordmark-img{animation:none!important;filter:none!important}.eyebrow{margin-bottom:10px!important}
+.hero-portrait{filter:none!important}
+.btn{border-radius:8px!important;transition:border-color .15s ease,background .15s ease!important}.btn:hover{transform:none!important}.btn.purple{background:#a987ff!important}.btn.purple:hover{background:#b699ff!important}
+.section{padding:58px 0!important}.section-head{margin-bottom:20px!important}.section h2{font-size:28px!important}.kicker{letter-spacing:.1em!important}.section-head p{font-size:14px!important;line-height:1.55!important}
+.market-surface{padding:28px!important;border:1px solid #33273e!important;border-radius:14px!important;background:#0f0c12!important;box-shadow:none!important}.market-title{margin-bottom:18px!important}.market-title h3{font-size:21px!important}.market-title span{border-radius:7px!important;background:#151119!important;border-color:#33273e!important}
+.plugin-grid{gap:12px!important}.plugin-card{min-height:225px!important;border-radius:10px!important;border-color:#2c2531!important;background:#111014!important;box-shadow:none!important;transition:border-color .15s ease,background .15s ease!important}.plugin-card:hover{transform:none!important;border-color:#59456d!important;background:#141117!important}.plugin-icon{border-radius:8px!important}.plugin-name{font-size:16px!important}.plugin-desc{color:#a9a1ae!important}.filters{gap:6px!important}.filter{border-radius:7px!important;background:#100e12!important}
+.plugin-cover{border-bottom-color:#29232e!important}.plugin-cover img{filter:none!important}.plugin-image-preview,.plugin-video-shell,.detail-panel,.detail-download-box{border-radius:10px!important;box-shadow:none!important}.detail-download-box{background:#100d18!important}.plugin-detail-icon{border-radius:12px!important;box-shadow:none!important}.plugin-detail-nav{backdrop-filter:none!important;background:#09080b!important}
+.features{gap:10px!important}.feature{border-radius:10px!important;background:#100e12!important;padding:17px!important}.feature p{line-height:1.55!important}
+.modal{backdrop-filter:none!important;background:rgba(0,0,0,.78)!important}.dialog{border-radius:10px!important;box-shadow:0 18px 60px rgba(0,0,0,.45)!important;animation:none!important}.field input,.field textarea,.field select,.close{border-radius:7px!important}
+.cloud-stat,.cloud-account-row,.cloud-empty{border-radius:8px!important;background:#100e12!important}
+.made-by-sems{background:transparent!important;letter-spacing:.03em!important}
+*{scrollbar-color:#40334b #0c0a0e}
+@media(max-width:900px){.hero{grid-template-columns:1fr!important;text-align:left!important}.hero-visual{height:auto!important;min-height:340px!important}.orbit-wrap{height:360px!important}.section-head{align-items:flex-start!important}.section-head p{text-align:left!important}}
+@media(max-width:620px){.market-surface{padding:20px 16px!important;border-radius:10px!important}.hero{padding-top:42px!important}.hero h1{font-size:42px!important}.section{padding:46px 0!important}.plugin-card{padding:15px!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
