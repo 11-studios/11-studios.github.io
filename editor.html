@@ -20,13 +20,18 @@
       <h2>Yeni öğe</h2>
       <div class="editor-actions"><button class="editor-btn" id="addTextBtn" type="button">+ Yazı</button><button class="editor-btn" id="addImageBtn" type="button">+ Görsel</button></div>
       <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
-      <p class="editor-note">Bölüm seçmene gerek yok. Önizlemeyi istediğin yere kaydır, öğeyi ekle ve sayfada istediğin noktaya sürükle.</p>
+      <p class="editor-note">Öğeyi ekle, sonra önizlemede istediğin yere sürükle.</p>
+    </section>
+    <section class="editor-card">
+      <div class="editor-card-title-row"><h2>Öğeler</h2><span id="elementCount" class="element-count">0</span></div>
+      <div id="elementList" class="editor-element-list"><div class="prop-empty">Henüz öğe yok.</div></div>
+      <p class="editor-note">Görünmeyen bir öğeyi buradan seçip “Bul” ile ekranda gösterebilirsin.</p>
     </section>
     <section class="editor-card">
       <h2>Seçili öğe</h2>
       <div id="selectedChip" class="selected-chip">Öğe seçilmedi</div>
-      <div id="properties"><div class="prop-empty">Önizlemeden bir öğeye tıkla veya yeni bir öğe ekle.</div></div>
-      <button class="editor-btn danger" id="deleteBtn" type="button" disabled>Seçileni sil</button>
+      <div id="properties"><div class="prop-empty">Önizlemeden veya yukarıdaki listeden bir öğe seç.</div></div>
+      <div class="selected-actions"><button class="editor-btn" id="focusBtn" type="button" disabled>Bul</button><button class="editor-btn danger" id="deleteBtn" type="button" disabled>Seçileni sil</button></div>
     </section>
     <section class="editor-card">
       <h2>Kaydet</h2>
@@ -35,7 +40,7 @@
     </section>
   </aside>
   <main class="editor-main">
-    <div class="editor-topbar"><div><strong>Canlı site önizlemesi</strong><div class="hint">Tüm sayfada serbestçe sürükle, düzenle ve kaydet. Sayfa footer bittikten sonra uzamaz.</div></div><button class="editor-btn" id="reloadBtn" type="button">Buluttan yenile</button></div>
+    <div class="editor-topbar"><div><strong>Canlı site önizlemesi</strong><div class="hint">Tüm sayfada serbestçe sürükle. Görünmeyen öğeleri soldaki Öğeler listesinden seçebilirsin.</div></div><button class="editor-btn" id="reloadBtn" type="button">Buluttan yenile</button></div>
     <div class="editor-frame-wrap"><iframe id="siteFrame" class="editor-frame" src="./?editorPreview=1&v=44" title="Site önizlemesi"></iframe></div>
   </main>
 </div>
