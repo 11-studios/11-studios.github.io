@@ -1,4 +1,4 @@
-name: Publish site v23
+name: Publish site v24
 on:
   push:
     paths:
@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build exact Ataturk image and switch site to v23
+      - name: Build exact Ataturk image and switch site to v24
         run: |
           python - <<'PY'
           from pathlib import Path
           import base64, re, hashlib
           parts = [
-              Path('assets/ataturk-final.b64').read_text(encoding='utf-8').strip(),
+              Path('assets/ataturk-final-1.b64').read_text(encoding='utf-8').strip(),
               Path('assets/ataturk-final-2.b64').read_text(encoding='utf-8').strip(),
               Path('assets/ataturk-final-3.b64').read_text(encoding='utf-8').strip(),
           ]
@@ -27,15 +27,15 @@ jobs:
           Path('assets/ataturk-final.jpg').write_bytes(raw)
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-23', s)
-          s=re.sub(r'<img\s+class="brand-orbit hero-portrait"[^>]*>', '<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v=20261016-23" alt="Atatürk">', s, count=1)
+          s=re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-24', s)
+          s=re.sub(r'<img\s+class="brand-orbit hero-portrait"[^>]*>', '<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v=20261016-24" alt="Atatürk">', s, count=1)
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit v23
+      - name: Commit v24
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html assets/ataturk-final.jpg
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v23 exact Ataturk portrait'
+          git commit -m 'Publish site v24 exact Ataturk portrait'
           git push
