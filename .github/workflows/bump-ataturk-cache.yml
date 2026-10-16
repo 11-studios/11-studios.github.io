@@ -1,4 +1,4 @@
-name: Publish site v38
+name: Publish site v40
 on:
   push:
     paths:
@@ -9,6 +9,7 @@ on:
       - 'assets/editor-runtime-v37.css'
       - 'assets/editor-v37.js'
       - 'assets/editor-v37.css'
+      - 'assets/editor-v40-bridge.js'
       - 'editor.html'
 permissions:
   contents: write
@@ -17,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install v38 frontend
+      - name: Install v40 frontend
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          V='20261016-38'
+          V='20261016-40'
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
 
@@ -50,10 +51,15 @@ jobs:
           x=e.read_text(encoding='utf-8')
           x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+',f'assets/editor-v37.css?v={V}',x)
           x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+',f'assets/editor-v37.js?v={V}',x)
-          x=re.sub(r'editorPreview=1&v=[^"\']+',f'editorPreview=1&v=38',x)
+          x=re.sub(r'editorPreview=1&v=[^"\']+',f'editorPreview=1&v=40',x)
+          bridge=f'<script src="assets/editor-v40-bridge.js?v={V}" defer></script>'
+          if 'editor-v40-bridge.js' in x:
+              x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+',f'assets/editor-v40-bridge.js?v={V}',x)
+          else:
+              x=x.replace('</body>',bridge+'\n</body>',1)
           e.write_text(x,encoding='utf-8')
           PY
-      - name: Verify v38
+      - name: Verify v40
         run: |
           test -s editor.html
           test -s assets/plugin-browser-v37.js
@@ -62,24 +68,27 @@ jobs:
           test -s assets/editor-runtime-v37.css
           test -s assets/editor-v37.js
           test -s assets/editor-v37.css
+          test -s assets/editor-v40-bridge.js
           node --check assets/plugin-browser-v37.js
           node --check assets/editor-runtime-v37.js
           node --check assets/editor-v37.js
+          node --check assets/editor-v40-bridge.js
           grep -q 'const PAGE_SIZE=10' assets/plugin-browser-v37.js
           grep -q 'editor-api' assets/editor-runtime-v37.js
           grep -q 'editor-api' assets/editor-v37.js
           grep -q 'pointermove' assets/editor-runtime-v37.js
           grep -q 'propOpacity' assets/editor-v37.js
           grep -q 'propX' assets/editor-v37.js
-          grep -q 'plugin-browser-v37.js?v=20261016-38' index.html
-          grep -q 'editor-runtime-v37.js?v=20261016-38' index.html
-          grep -q 'editor-v37.js?v=20261016-38' editor.html
-          grep -q 'editorPreview=1&v=38' editor.html
-      - name: Commit v38
+          grep -q 'plugin-browser-v37.js?v=20261016-40' index.html
+          grep -q 'editor-runtime-v37.js?v=20261016-40' index.html
+          grep -q 'editor-v37.js?v=20261016-40' editor.html
+          grep -q 'editor-v40-bridge.js?v=20261016-40' editor.html
+          grep -q 'editorPreview=1&v=40' editor.html
+      - name: Commit v40
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html editor.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v38 editor fixes and 10 item pages'
+          git commit -m 'Publish site v40 footer-clamped editor'
           git push
