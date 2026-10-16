@@ -25,6 +25,11 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
 
+          s=s.replace('<div class="kicker" id="storeKicker">Mağaza</div><h2 id="storeTitle">Son pluginler</h2>','<div class="kicker" id="storeKicker">11_ Studios</div><h2 id="storeTitle">Pluginler</h2>')
+          s=s.replace('Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.','Minecraft sunucuları için yayınladığımız pluginler.')
+          s=s.replace('<div class="market-title"><h3>11_ Market</h3>','<div class="market-title"><h3>Pluginler</h3>')
+          s=s.replace('Yönetim verileri bu tarayıcıda saklanır. GitHub Pages sunucu tarafı veritabanı sağlamadığından, ortak ve kalıcı yönetim için backend entegrasyonu gerekir.','Pluginler, hesaplar ve site düzenleri buluta kaydedilir. Kaydettiğin değişiklikler tüm cihazlarda görünür.')
+
           css='''<link rel="stylesheet" href="assets/plugin-browser-v37.css?v=20261016-37">\n<link rel="stylesheet" href="assets/editor-runtime-v37.css?v=20261016-37">\n'''
           if 'assets/plugin-browser-v37.css?v=20261016-37' not in s:
               s=s.replace('</head>',css+'</head>',1)
@@ -51,11 +56,13 @@ jobs:
           grep -q 'assets/editor-runtime-v37.js?v=20261016-37' index.html
           grep -q 'assets/plugin-browser-v37.css?v=20261016-37' index.html
           grep -q 'assets/editor-runtime-v37.css?v=20261016-37' index.html
+          grep -q 'id="storeTitle">Pluginler<' index.html
+          grep -q 'site düzenleri buluta kaydedilir' index.html
       - name: Commit v37
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v37 plugin browser and visual editor'
+          git commit -m 'Polish v37 plugin browser labels'
           git push
