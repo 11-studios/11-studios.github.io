@@ -1,5 +1,5 @@
 (()=>{
-  const PAGE_SIZE=5;
+  const PAGE_SIZE=10;
   let page=1;
   let selectedId='';
   let search='';
