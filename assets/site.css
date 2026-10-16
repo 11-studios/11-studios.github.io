@@ -352,3 +352,7 @@ body:before,.plugin-detail-page:before,.market-surface:before,.market-surface:af
 
 @supports (content-visibility:auto){#about{content-visibility:auto;contain-intrinsic-size:auto 520px}}
 #top .hero-visual .orbit-wrap .hero-portrait{width:500px!important;height:auto!important;image-rendering:auto!important;object-fit:contain!important;background:transparent!important;box-shadow:none!important;filter:none!important;-webkit-mask-image:radial-gradient(ellipse 76% 80% at 50% 48%,#000 62%,rgba(0,0,0,.96) 72%,transparent 100%);mask-image:radial-gradient(ellipse 76% 80% at 50% 48%,#000 62%,rgba(0,0,0,.96) 72%,transparent 100%)}
+
+/* v35 transparent portrait */
+#top .hero-visual .orbit-wrap .brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;width:520px!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:center bottom!important;image-rendering:auto!important;background:transparent!important;box-shadow:none!important;filter:none!important;-webkit-mask-image:none!important;mask-image:none!important;border-radius:0!important}
+#top .hero-visual .orbit-wrap{background:none!important;background-image:none!important;overflow:visible!important}
