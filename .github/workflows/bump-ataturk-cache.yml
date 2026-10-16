@@ -1,16 +1,12 @@
-name: Publish site v42
+name: Publish site v43
 on:
   push:
     paths:
       - '.github/workflows/bump-ataturk-cache.yml'
-      - 'assets/plugin-browser-v37.js'
-      - 'assets/plugin-browser-v37.css'
-      - 'assets/editor-runtime-v37.js'
-      - 'assets/editor-runtime-v37.css'
       - 'assets/editor-v37.js'
-      - 'assets/editor-v37.css'
       - 'assets/editor-v40-bridge.js'
       - 'editor.html'
+      - 'index.html'
 permissions:
   contents: write
 jobs:
@@ -18,77 +14,59 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install v42 frontend
+      - name: Remove GIF size cap and publish v43
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          V='20261016-42'
+          V='20261016-43'
+
+          j=Path('assets/editor-v37.js')
+          s=j.read_text(encoding='utf-8')
+          old="""    if(file.type.toLowerCase()==='image/gif'){
+      const data=await fileToDataUrl(file);if(data.length>440000)throw new Error('gif_too_large');return data;
+    }"""
+          new="""    if(file.type.toLowerCase()==='image/gif'){
+      const data=await fileToDataUrl(file);return data;
+    }"""
+          s=s.replace(old,new)
+          s=s.replace("}catch(err){status(err.message==='gif_too_large'?'Animasyonlu GIF yaklaşık 320 KB’dan küçük olmalı.':'Görsel eklenemedi. Dosyayı küçültüp tekrar dene.','bad');}","}catch(err){status('Görsel eklenemedi. Dosya 8 MB’dan büyük olmamalı ve desteklenen bir görsel olmalı.','bad');}")
+          s=re.sub(r"editor-runtime-v37\.js\?v=20261016-\d+","editor-runtime-v37.js?v=20261016-43",s)
+          j.write_text(s,encoding='utf-8')
+
+          b=Path('assets/editor-v40-bridge.js')
+          x=b.read_text(encoding='utf-8')
+          x=re.sub(r"const VERSION='[^']+'",f"const VERSION='{V}'",x)
+          b.write_text(x,encoding='utf-8')
+
           p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-
-          s=s.replace('<div class="kicker" id="storeKicker">Mağaza</div><h2 id="storeTitle">Son pluginler</h2>','<div class="kicker" id="storeKicker">11_ Studios</div><h2 id="storeTitle">Pluginler</h2>')
-          s=s.replace('Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.','')
-          s=s.replace('Minecraft sunucuları için yayınladığımız pluginler.','')
-          s=s.replace('Sunucuda işimize yarayan şeyleri yapıp burada paylaşıyoruz.','')
-          s=s.replace('<div class="market-title"><h3>11_ Market</h3>','<div class="market-title"><h3>Pluginler</h3>')
-          s=s.replace('Yönetim verileri bu tarayıcıda saklanır. GitHub Pages sunucu tarafı veritabanı sağlamadığından, ortak ve kalıcı yönetim için backend entegrasyonu gerekir.','Pluginler, hesaplar ve site düzenleri buluta kaydedilir. Kaydettiğin değişiklikler tüm cihazlarda görünür.')
-
-          for name in ('plugin-browser-v37.css','editor-runtime-v37.css'):
-              pattern=rf'<link rel="stylesheet" href="assets/{re.escape(name)}\?v=[^"]+">'
-              repl=f'<link rel="stylesheet" href="assets/{name}?v={V}">'
-              if re.search(pattern,s): s=re.sub(pattern,repl,s,count=1)
-              else: s=s.replace('</head>',repl+'\n</head>',1)
-
-          for name in ('plugin-browser-v37.js','editor-runtime-v37.js'):
-              pattern=rf'<script src="assets/{re.escape(name)}\?v=[^"]+" defer></script>'
-              repl=f'<script src="assets/{name}?v={V}" defer></script>'
-              if re.search(pattern,s): s=re.sub(pattern,repl,s,count=1)
-              else: s=s.replace('</body>',repl+'\n</body>',1)
-
-          p.write_text(s,encoding='utf-8')
+          x=p.read_text(encoding='utf-8')
+          x=re.sub(r'assets/editor-runtime-v37\.css\?v=[^"\']+',f'assets/editor-runtime-v37.css?v={V}',x)
+          x=re.sub(r'assets/editor-runtime-v37\.js\?v=[^"\']+',f'assets/editor-runtime-v37.js?v={V}',x)
+          p.write_text(x,encoding='utf-8')
 
           e=Path('editor.html')
           x=e.read_text(encoding='utf-8')
           x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+',f'assets/editor-v37.css?v={V}',x)
           x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+',f'assets/editor-v37.js?v={V}',x)
-          x=re.sub(r'editorPreview=1&v=[^"\']+',f'editorPreview=1&v=42',x)
-          bridge=f'<script src="assets/editor-v40-bridge.js?v={V}" defer></script>'
-          if 'editor-v40-bridge.js' in x:
-              x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+',f'assets/editor-v40-bridge.js?v={V}',x)
-          else:
-              x=x.replace('</body>',bridge+'\n</body>',1)
+          x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+',f'assets/editor-v40-bridge.js?v={V}',x)
+          x=re.sub(r'editorPreview=1&v=[^"\']+', 'editorPreview=1&v=43',x)
           e.write_text(x,encoding='utf-8')
           PY
-      - name: Verify v42
+      - name: Verify v43
         run: |
-          test -s editor.html
-          test -s assets/plugin-browser-v37.js
-          test -s assets/plugin-browser-v37.css
-          test -s assets/editor-runtime-v37.js
-          test -s assets/editor-runtime-v37.css
-          test -s assets/editor-v37.js
-          test -s assets/editor-v37.css
-          test -s assets/editor-v40-bridge.js
-          node --check assets/plugin-browser-v37.js
-          node --check assets/editor-runtime-v37.js
           node --check assets/editor-v37.js
           node --check assets/editor-v40-bridge.js
-          grep -q 'const PAGE_SIZE=10' assets/plugin-browser-v37.js
-          grep -q 'editor-api' assets/editor-runtime-v37.js
-          grep -q 'editor-api' assets/editor-v37.js
-          grep -q 'autoScrollTick' assets/editor-runtime-v37.js
-          grep -q 'plugin-browser-v37.js?v=20261016-42' index.html
-          grep -q 'editor-runtime-v37.js?v=20261016-42' index.html
-          grep -q 'editor-v37.js?v=20261016-42' editor.html
-          grep -q 'editor-v40-bridge.js?v=20261016-42' editor.html
-          grep -q 'editorPreview=1&v=42' editor.html
-      - name: Commit v42
+          ! grep -q "gif_too_large" assets/editor-v37.js
+          ! grep -q "320 KB" assets/editor-v37.js
+          grep -q 'editor-v37.js?v=20261016-43' editor.html
+          grep -q 'editorPreview=1&v=43' editor.html
+      - name: Commit v43
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html editor.html
+          git add assets/editor-v37.js assets/editor-v40-bridge.js index.html editor.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v42 plugin list and editor fixes'
+          git commit -m 'Publish site v43 without GIF 320KB cap'
           git push
