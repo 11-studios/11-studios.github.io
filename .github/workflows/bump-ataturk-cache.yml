@@ -1,16 +1,15 @@
-name: Publish site v36
+name: Publish site v37
 on:
   push:
     paths:
       - '.github/workflows/bump-ataturk-cache.yml'
-      - 'assets/app-original.js'
-      - 'assets/supabase-sync.js'
-      - 'assets/cloud-accounts.js'
-      - 'assets/app-media.js'
-      - 'assets/site-enhancements.js'
-      - 'assets/plugin-files.js'
-      - 'assets/cloud-files.js'
-      - 'assets/store-search.js'
+      - 'assets/plugin-browser-v37.js'
+      - 'assets/plugin-browser-v37.css'
+      - 'assets/editor-runtime-v37.js'
+      - 'assets/editor-runtime-v37.css'
+      - 'assets/editor-v37.js'
+      - 'assets/editor-v37.css'
+      - 'editor.html'
 permissions:
   contents: write
 jobs:
@@ -18,69 +17,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build site v36
+      - name: Install v37 frontend
         run: |
           python - <<'PY'
           from pathlib import Path
-          import base64, hashlib, re
-
-          V='20261016-36'
-
-          names='abcdefg'
-          parts=[Path(f'assets/ataturk-v35-{x}.b64').read_text(encoding='utf-8').strip() for x in names]
-          raw=base64.b64decode(''.join(parts), validate=True)
-          assert raw.startswith(b'\x89PNG\r\n\x1a\n'), 'invalid PNG'
-          assert hashlib.sha256(raw).hexdigest() == 'dd9490378349b11424cbadb915d040e15519863cf386dfbfc0fd9a2484308752', 'portrait checksum mismatch'
-          Path('assets/ataturk-cutout.png').write_bytes(raw)
-
-          media=Path('assets/app-media.js').read_text(encoding='utf-8')
-          media=media.replace("const heroPromise=loadParts('assets/final-wordmark',8);", "const heroPromise=Promise.resolve('static');")
-          media=media.replace("const faviconPromise=loadParts('assets/final-favicon',4);", "const faviconPromise=Promise.resolve('static');")
-          media=media.replace("img.src=`data:image/png;base64,${heroData}`;", f"img.src='assets/hero-wordmark.png?v={V}';img.decoding='async';")
-          media=media.replace("favicon.type='image/png';favicon.href=`data:image/png;base64,${data}`;", f"favicon.type='image/png';favicon.href='assets/site-icon.png?v={V}';")
-          start=media.find("  const app=document.createElement('script');")
-          load=media.find("  app.addEventListener('load',()=>{\n",start)
-          end_marker="\n  });\n  document.head.appendChild(app);\n})();"
-          end=media.rfind(end_marker)
-          if min(start,load,end) < 0: raise SystemExit('app-media optimization markers missing')
-          body_start=load+len("  app.addEventListener('load',()=>{\n")
-          media_core=media[:start]+media[body_start:end]+"\n})();\n"
-
-          js_files=[
-            Path('assets/app-original.js').read_text(encoding='utf-8'),
-            Path('assets/supabase-sync.js').read_text(encoding='utf-8'),
-            Path('assets/cloud-accounts.js').read_text(encoding='utf-8'),
-            media_core,
-            Path('assets/site-enhancements.js').read_text(encoding='utf-8'),
-            Path('assets/plugin-files.js').read_text(encoding='utf-8'),
-            Path('assets/cloud-files.js').read_text(encoding='utf-8'),
-            Path('assets/store-search.js').read_text(encoding='utf-8')
-          ]
-          Path('assets/site-app.js').write_text('\n;\n'.join(js_files),encoding='utf-8')
 
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>', f'<img class="brand-orbit hero-portrait" src="assets/ataturk-cutout.png?v={V}" alt="Atatürk" width="512" height="422" decoding="async" fetchpriority="high">', s, count=1)
-          preload=f'<link rel="preload" as="image" href="assets/ataturk-cutout.png?v={V}" type="image/png" fetchpriority="high">'
-          s=re.sub(r'<link rel="preload" as="image" href="assets/ataturk-[^"]+\?v=[^"]+"(?: type="image/[^"]+")? fetchpriority="high">', preload, s, count=1)
-          s=re.sub(r'<link rel="stylesheet" href="assets/site\.css\?v=[^"]+">', f'<link rel="stylesheet" href="assets/site.css?v={V}">', s, count=1)
-          s=re.sub(r'<script src="assets/site-app\.js\?v=[^"]+" defer></script>', f'<script src="assets/site-app.js?v={V}" defer></script>', s, count=1)
-          p.write_text(s, encoding='utf-8')
+
+          css='''<link rel="stylesheet" href="assets/plugin-browser-v37.css?v=20261016-37">\n<link rel="stylesheet" href="assets/editor-runtime-v37.css?v=20261016-37">\n'''
+          if 'assets/plugin-browser-v37.css?v=20261016-37' not in s:
+              s=s.replace('</head>',css+'</head>',1)
+
+          scripts='''<script src="assets/plugin-browser-v37.js?v=20261016-37" defer></script>\n<script src="assets/editor-runtime-v37.js?v=20261016-37" defer></script>\n'''
+          if 'assets/plugin-browser-v37.js?v=20261016-37' not in s:
+              s=s.replace('</body>',scripts+'</body>',1)
+
+          p.write_text(s,encoding='utf-8')
           PY
-      - name: Verify v36
+      - name: Verify v37
         run: |
-          test -s assets/ataturk-cutout.png
-          test -s assets/site-app.js
-          node --check assets/site-app.js
-          grep -q 'assets/ataturk-cutout.png?v=20261016-36' index.html
-          grep -q 'assets/site-app.js?v=20261016-36' index.html
-          grep -q '11_cloud_catalog_synced_v2' assets/site-app.js
-          grep -q 'Plugin listesi tüm cihazlara kaydedildi' assets/site-app.js
-      - name: Commit v36
+          test -s editor.html
+          test -s assets/plugin-browser-v37.js
+          test -s assets/plugin-browser-v37.css
+          test -s assets/editor-runtime-v37.js
+          test -s assets/editor-runtime-v37.css
+          test -s assets/editor-v37.js
+          test -s assets/editor-v37.css
+          node --check assets/plugin-browser-v37.js
+          node --check assets/editor-runtime-v37.js
+          node --check assets/editor-v37.js
+          grep -q 'assets/plugin-browser-v37.js?v=20261016-37' index.html
+          grep -q 'assets/editor-runtime-v37.js?v=20261016-37' index.html
+          grep -q 'assets/plugin-browser-v37.css?v=20261016-37' index.html
+          grep -q 'assets/editor-runtime-v37.css?v=20261016-37' index.html
+      - name: Commit v37
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/site-app.js assets/ataturk-cutout.png
+          git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v36 cross-device plugin sync'
+          git commit -m 'Publish site v37 plugin browser and visual editor'
           git push
