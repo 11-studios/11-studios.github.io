@@ -1,4 +1,4 @@
-name: Publish site v40
+name: Publish site v41
 on:
   push:
     paths:
@@ -18,18 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install v40 frontend
+      - name: Install v41 frontend
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          V='20261016-40'
+          V='20261016-41'
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
 
           s=s.replace('<div class="kicker" id="storeKicker">Mağaza</div><h2 id="storeTitle">Son pluginler</h2>','<div class="kicker" id="storeKicker">11_ Studios</div><h2 id="storeTitle">Pluginler</h2>')
-          s=s.replace('Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.','Minecraft sunucuları için yayınladığımız pluginler.')
+          s=s.replace('Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.','')
+          s=s.replace('Minecraft sunucuları için yayınladığımız pluginler.','')
+          s=s.replace('Sunucuda işimize yarayan şeyleri yapıp burada paylaşıyoruz.','')
           s=s.replace('<div class="market-title"><h3>11_ Market</h3>','<div class="market-title"><h3>Pluginler</h3>')
           s=s.replace('Yönetim verileri bu tarayıcıda saklanır. GitHub Pages sunucu tarafı veritabanı sağlamadığından, ortak ve kalıcı yönetim için backend entegrasyonu gerekir.','Pluginler, hesaplar ve site düzenleri buluta kaydedilir. Kaydettiğin değişiklikler tüm cihazlarda görünür.')
 
@@ -51,7 +53,7 @@ jobs:
           x=e.read_text(encoding='utf-8')
           x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+',f'assets/editor-v37.css?v={V}',x)
           x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+',f'assets/editor-v37.js?v={V}',x)
-          x=re.sub(r'editorPreview=1&v=[^"\']+',f'editorPreview=1&v=40',x)
+          x=re.sub(r'editorPreview=1&v=[^"\']+',f'editorPreview=1&v=41',x)
           bridge=f'<script src="assets/editor-v40-bridge.js?v={V}" defer></script>'
           if 'editor-v40-bridge.js' in x:
               x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+',f'assets/editor-v40-bridge.js?v={V}',x)
@@ -59,7 +61,7 @@ jobs:
               x=x.replace('</body>',bridge+'\n</body>',1)
           e.write_text(x,encoding='utf-8')
           PY
-      - name: Verify v40
+      - name: Verify v41
         run: |
           test -s editor.html
           test -s assets/plugin-browser-v37.js
@@ -76,19 +78,17 @@ jobs:
           grep -q 'const PAGE_SIZE=10' assets/plugin-browser-v37.js
           grep -q 'editor-api' assets/editor-runtime-v37.js
           grep -q 'editor-api' assets/editor-v37.js
-          grep -q 'pointermove' assets/editor-runtime-v37.js
-          grep -q 'propOpacity' assets/editor-v37.js
-          grep -q 'propX' assets/editor-v37.js
-          grep -q 'plugin-browser-v37.js?v=20261016-40' index.html
-          grep -q 'editor-runtime-v37.js?v=20261016-40' index.html
-          grep -q 'editor-v37.js?v=20261016-40' editor.html
-          grep -q 'editor-v40-bridge.js?v=20261016-40' editor.html
-          grep -q 'editorPreview=1&v=40' editor.html
-      - name: Commit v40
+          grep -q 'autoScrollTick' assets/editor-runtime-v37.js
+          grep -q 'plugin-browser-v37.js?v=20261016-41' index.html
+          grep -q 'editor-runtime-v37.js?v=20261016-41' index.html
+          grep -q 'editor-v37.js?v=20261016-41' editor.html
+          grep -q 'editor-v40-bridge.js?v=20261016-41' editor.html
+          grep -q 'editorPreview=1&v=41' editor.html
+      - name: Commit v41
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html editor.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v40 footer-clamped editor'
+          git commit -m 'Publish site v41 compact editor fixes'
           git push
