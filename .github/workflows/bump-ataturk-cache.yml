@@ -1,4 +1,4 @@
-name: Publish site v41
+name: Publish site v42
 on:
   push:
     paths:
@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install v41 frontend
+      - name: Install v42 frontend
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          V='20261016-41'
+          V='20261016-42'
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
 
@@ -53,7 +53,7 @@ jobs:
           x=e.read_text(encoding='utf-8')
           x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+',f'assets/editor-v37.css?v={V}',x)
           x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+',f'assets/editor-v37.js?v={V}',x)
-          x=re.sub(r'editorPreview=1&v=[^"\']+',f'editorPreview=1&v=41',x)
+          x=re.sub(r'editorPreview=1&v=[^"\']+',f'editorPreview=1&v=42',x)
           bridge=f'<script src="assets/editor-v40-bridge.js?v={V}" defer></script>'
           if 'editor-v40-bridge.js' in x:
               x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+',f'assets/editor-v40-bridge.js?v={V}',x)
@@ -61,7 +61,7 @@ jobs:
               x=x.replace('</body>',bridge+'\n</body>',1)
           e.write_text(x,encoding='utf-8')
           PY
-      - name: Verify v41
+      - name: Verify v42
         run: |
           test -s editor.html
           test -s assets/plugin-browser-v37.js
@@ -79,16 +79,16 @@ jobs:
           grep -q 'editor-api' assets/editor-runtime-v37.js
           grep -q 'editor-api' assets/editor-v37.js
           grep -q 'autoScrollTick' assets/editor-runtime-v37.js
-          grep -q 'plugin-browser-v37.js?v=20261016-41' index.html
-          grep -q 'editor-runtime-v37.js?v=20261016-41' index.html
-          grep -q 'editor-v37.js?v=20261016-41' editor.html
-          grep -q 'editor-v40-bridge.js?v=20261016-41' editor.html
-          grep -q 'editorPreview=1&v=41' editor.html
-      - name: Commit v41
+          grep -q 'plugin-browser-v37.js?v=20261016-42' index.html
+          grep -q 'editor-runtime-v37.js?v=20261016-42' index.html
+          grep -q 'editor-v37.js?v=20261016-42' editor.html
+          grep -q 'editor-v40-bridge.js?v=20261016-42' editor.html
+          grep -q 'editorPreview=1&v=42' editor.html
+      - name: Commit v42
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html editor.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v41 compact editor fixes'
+          git commit -m 'Publish site v42 plugin list and editor fixes'
           git push
