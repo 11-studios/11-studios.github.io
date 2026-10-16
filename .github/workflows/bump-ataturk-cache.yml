@@ -1,4 +1,4 @@
-name: Publish site v28
+name: Publish site v29
 on:
   push:
     paths:
@@ -10,41 +10,95 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Keep Ataturk visible and publish accounts v28
+      - name: Publish secure simple v29
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
+          # Keep the Ataturk portrait visible.
           base = Path('assets/style-base.css')
           s = base.read_text(encoding='utf-8')
           s = s.replace('background:url("ataturk-hero-v2.webp") center bottom/contain no-repeat!important;', 'background:none!important;background-image:none!important;')
           s = s.replace('.brand-orbit.hero-portrait{display:none!important}', '.brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important}')
           base.write_text(s, encoding='utf-8')
 
-          css = Path('assets/style.css')
-          s = css.read_text(encoding='utf-8')
-          marker = '/* HERO VISIBILITY FIX V26 */'
-          if marker not in s:
-              s += '\n' + marker + '\n#top .hero-visual .orbit-wrap .brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:5!important;width:520px!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:center bottom!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;animation:none!important;filter:none!important}\n#top .hero-visual .orbit-wrap{background:none!important;background-image:none!important;overflow:visible!important}\n'
-          css.write_text(s, encoding='utf-8')
+          # Disable the old browser-only admin password check and simplify copy.
+          original = Path('assets/app-original.js')
+          a = original.read_text(encoding='utf-8')
+          a = re.sub(r"const ADMIN_PASS_HASH='[^']*';", "const ADMIN_PASS_HASH='disabled-cloud-only';", a, count=1)
+          replacements = {
+            "heroDesc:'11_ Studios topluluğu için sade bir plugin vitrini. Ücretsiz içerikleri indir, premium projeleri keşfet ve yeni sürümleri tek yerde yayınla.'": "heroDesc:'Kendi sunucularımız için yaptığımız pluginleri burada topluyoruz. İşine yararsa al kullan.'",
+            "storeDesc:'11_ Studios tarafından geliştirilen Minecraft sunucu eklentilerini keşfet; ücretsiz araçları indir, premium çözümleri incele.'": "storeDesc:'Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.'",
+            "aboutTitle:'Bizi neden tercih etmelisiniz?'": "aboutTitle:'11_ Studios'",
+            "aboutDesc:'Gerçek sunucu ihtiyaçlarından doğan çözümler geliştiriyoruz. Önceliğimiz gösteriş değil; stabil çalışan, temiz görünen ve uzun süre kullanılabilen sistemler üretmek.'": "aboutDesc:'Sunucuda işimize yarayan şeyleri yapıp burada paylaşıyoruz.'",
+            "feature1Title:'Deneyimlerimiz'": "feature1Title:'Sunucuda kullandıklarımız'",
+            "feature1Desc:'Minecraft sunucu eklentileri, arayüz düzenleri ve oyuncu deneyimi odaklı sistemlerde edindiğimiz pratik tecrübeyi doğrudan projelere yansıtıyoruz.'": "feature1Desc:'Pluginleri önce kendi sunucularımızda deniyoruz.'",
+            "feature2Title:'İhtiyaca göre geliştirme'": "feature2Title:'Gereksiz şey yok'",
+            "feature2Desc:'Hazır ama yüzeysel çözümler yerine, sunucunun gerçekten ihtiyaç duyduğu sistemi sade ve kullanılabilir biçimde hazırlıyoruz.'": "feature2Desc:'İşi neyse onu yapıyor. Ayarları mümkün olduğunca sade tutuyoruz.'",
+            "feature3Title:'Temiz ve sürdürülebilir yapı'": "feature3Title:'Güncellemeler'",
+            "feature3Desc:'Sade tasarım, anlaşılır düzen ve devam eden sürüm desteğiyle hem yönetim tarafında hem oyuncu tarafında güven veren bir deneyim sunuyoruz.'": "feature3Desc:'Kullandığımız sürümlerde sorun çıktıkça düzeltip güncelliyoruz.'",
+            "heroDesc:'A clean plugin showcase for the 11_ Studios community. Download free releases, discover premium projects, and publish new versions in one place.'": "heroDesc:'Plugins we build for our own servers, collected in one place. Use whatever helps.'",
+            "storeDesc:'Discover Minecraft server plugins developed by 11_ Studios; download free tools and explore premium solutions.'": "storeDesc:'Minecraft plugins we made. Download the free ones or check the premium ones.'",
+            "aboutTitle:'Why choose us?'": "aboutTitle:'11_ Studios'",
+            "aboutDesc:'We build solutions around real server needs. Our priority is not flashy features, but stable, clean, and maintainable systems.'": "aboutDesc:'We make things we actually need on our servers and share them here.'",
+            "feature1Title:'Our experience'": "feature1Title:'Used on our servers'",
+            "feature1Desc:'We bring our hands-on experience with Minecraft server plugins, interface layouts, and player-focused systems directly into our projects.'": "feature1Desc:'We test plugins on our own servers first.'",
+            "feature2Title:'Built around your needs'": "feature2Title:'No extra clutter'",
+            "feature2Desc:'Instead of generic, surface-level solutions, we build the system the server actually needs in a simple and usable form.'": "feature2Desc:'Each plugin does its job without unnecessary extras.'",
+            "feature3Title:'Clean and sustainable'": "feature3Title:'Updates'",
+            "feature3Desc:'With clear design, understandable structure, and ongoing version support, we aim for a reliable experience for both staff and players.'": "feature3Desc:'When something breaks on the versions we use, we fix and update it.'"
+          }
+          for old,new in replacements.items():
+            a = a.replace(old,new)
+          original.write_text(a, encoding='utf-8')
+
+          # Route account/analytics calls through the Edge Function instead of public SECURITY DEFINER RPCs.
+          accounts = Path('assets/cloud-accounts.js')
+          c = accounts.read_text(encoding='utf-8')
+          pattern = re.compile(r"  async function rpc\(name,payload\)\{\n.*?\n  \}\n\n  const safeUsers=", re.S)
+          replacement = """  async function rpc(name,payload){
+            const c=cfg();
+            if(typeof c.api!=='function')throw new Error('cloud-api-not-ready');
+            return c.api(name,payload||{});
+          }
+
+          const safeUsers="""
+          c, count = pattern.subn(replacement, c, count=1)
+          if count != 1:
+            raise SystemExit('cloud-accounts rpc patch failed')
+          accounts.write_text(c, encoding='utf-8')
 
           index = Path('index.html')
           s = index.read_text(encoding='utf-8')
-          s = re.sub(r'assets/style\.css\?v=[^"\']+', 'assets/style.css?v=20261016-28', s)
-          s = re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-28', s)
+          if 'Content-Security-Policy' not in s:
+            security_meta = '''<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://mzrnuiunfxaendnrigzk.supabase.co; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">'''
+            s = s.replace('<meta name="theme-color" content="#09070d">', '<meta name="theme-color" content="#09070d">\n'+security_meta, 1)
+          s = s.replace('11_ Studios topluluğu için sade bir plugin vitrini. Ücretsiz içerikleri indir, premium projeleri keşfet ve yeni sürümleri tek yerde yayınla.', 'Kendi sunucularımız için yaptığımız pluginleri burada topluyoruz. İşine yararsa al kullan.')
+          s = s.replace('11_ Studios tarafından geliştirilen Minecraft sunucu eklentilerini keşfet; ücretsiz araçları indir, premium çözümleri incele.', 'Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.')
+          s = s.replace('Bizi neden tercih etmelisiniz?', '11_ Studios')
+          s = s.replace('Gerçek sunucu ihtiyaçlarından doğan çözümler geliştiriyoruz. Önceliğimiz gösteriş değil; stabil çalışan, temiz görünen ve uzun süre kullanılabilen sistemler üretmek.', 'Sunucuda işimize yarayan şeyleri yapıp burada paylaşıyoruz.')
+          s = s.replace('Deneyimlerimiz', 'Sunucuda kullandıklarımız')
+          s = s.replace('Minecraft sunucu eklentileri, arayüz düzenleri ve oyuncu deneyimi odaklı sistemlerde edindiğimiz pratik tecrübeyi doğrudan projelere yansıtıyoruz.', 'Pluginleri önce kendi sunucularımızda deniyoruz.')
+          s = s.replace('İhtiyaca göre geliştirme', 'Gereksiz şey yok')
+          s = s.replace('Hazır ama yüzeysel çözümler yerine, sunucunun gerçekten ihtiyaç duyduğu sistemi sade ve kullanılabilir biçimde hazırlıyoruz.', 'İşi neyse onu yapıyor. Ayarları mümkün olduğunca sade tutuyoruz.')
+          s = s.replace('Temiz ve sürdürülebilir yapı', 'Güncellemeler')
+          s = s.replace('Sade tasarım, anlaşılır düzen ve devam eden sürüm desteğiyle hem yönetim tarafında hem oyuncu tarafında güven veren bir deneyim sunuyoruz.', 'Kullandığımız sürümlerde sorun çıktıkça düzeltip güncelliyoruz.')
+          s = re.sub(r'assets/style\.css\?v=[^"\']+', 'assets/style.css?v=20261016-29', s)
+          s = re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-29', s)
           index.write_text(s, encoding='utf-8')
 
           app = Path('assets/app.js')
-          a = app.read_text(encoding='utf-8')
-          a = re.sub(r"const VERSION='[^']+'", "const VERSION='20261016-28'", a, count=1)
-          app.write_text(a, encoding='utf-8')
+          x = app.read_text(encoding='utf-8')
+          x = re.sub(r"const VERSION='[^']+'", "const VERSION='20261016-29'", x, count=1)
+          app.write_text(x, encoding='utf-8')
           PY
-      - name: Commit v28
+      - name: Commit v29
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/style-base.css assets/style.css assets/app.js
+          git add index.html assets/style-base.css assets/app-original.js assets/cloud-accounts.js assets/app.js
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v28 cloud accounts and analytics'
+          git commit -m 'Publish site v29 security and simple design'
           git push
