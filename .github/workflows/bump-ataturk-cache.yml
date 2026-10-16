@@ -18,7 +18,6 @@ jobs:
 
           V='20261016-30'
 
-          # ----- One CSS request -----
           base=Path('assets/style-base.css').read_text(encoding='utf-8')
           style=Path('assets/style.css').read_text(encoding='utf-8')
           style=re.sub(r'^\s*@import\s+url\(["\']style-base\.css["\']\);\s*','',style,count=1,flags=re.M)
@@ -31,12 +30,10 @@ jobs:
             Path('assets/store-search.css').read_text(encoding='utf-8'),
           ]
           site_css='\n'.join(css_parts)
-          # Remove comments and harmless repeated whitespace without touching values.
           site_css=re.sub(r'/\*.*?\*/','',site_css,flags=re.S)
           site_css=re.sub(r'\n{3,}','\n\n',site_css)
           Path('assets/site.css').write_text(site_css,encoding='utf-8')
 
-          # ----- Remove media request waterfall -----
           media=Path('assets/app-media.js').read_text(encoding='utf-8')
           media=media.replace("const heroPromise=loadParts('assets/final-wordmark',8);", "const heroPromise=Promise.resolve('static');")
           media=media.replace("const faviconPromise=loadParts('assets/final-favicon',4);", "const faviconPromise=Promise.resolve('static');")
@@ -52,7 +49,6 @@ jobs:
           body_start=load+len("  app.addEventListener('load',()=>{\n")
           media_core=media[:start]+media[body_start:end]+"\n})();\n"
 
-          # ----- One JS request -----
           js_files=[
             Path('assets/app-original.js').read_text(encoding='utf-8'),
             Path('assets/supabase-sync.js').read_text(encoding='utf-8'),
@@ -65,30 +61,18 @@ jobs:
           ]
           Path('assets/site-app.js').write_text('\n;\n'.join(js_files),encoding='utf-8')
 
-          # ----- Lean HTML -----
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-
-          # One stylesheet only.
           s=re.sub(r'<link rel="stylesheet" href="assets/style\.css\?v=[^"]+">',f'<link rel="stylesheet" href="assets/site.css?v={V}">',s,count=1)
+          s=re.sub(r'<link rel="icon"[^>]*>',f'<link rel="icon" href="assets/site-icon.png?v={V}" type="image/png">',s,count=1)
+          s=re.sub(r'<img class="logo"[^>]*>',f'<img class="logo" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" decoding="async">',s,count=1)
+          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v={V}" alt="Atatürk" width="512" height="512" decoding="async" fetchpriority="high">',s,count=1)
 
-          # Use a small cached favicon instead of rebuilding one in the browser.
-          s=re.sub(r'<link rel="icon" href="[^"]+">',f'<link rel="icon" href="assets/site-icon.png?v={V}" type="image/png">',s,count=1)
-
-          # Replace large embedded header logo with the existing tiny wordmark file.
-          s=re.sub(r'<img class="logo" src="data:image/png;base64,[^"]+" alt="11_ Studios">',f'<img class="logo" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" decoding="async">',s,count=1)
-
-          # Replace the embedded Ataturk JPEG with the verified repository JPEG.
-          s=re.sub(r'<img class="brand-orbit hero-portrait" src="data:image/jpeg;base64,[^"]+" alt="Atatürk">',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v={V}" alt="Atatürk" width="512" height="512" decoding="async" fetchpriority="high">',s,count=1)
-
-          # Preconnect only to the API actually used and preload the above-the-fold portrait.
           hints=f'<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n<link rel="preload" as="image" href="assets/ataturk-final.jpg?v={V}" fetchpriority="high">'
           if 'rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co"' not in s:
             s=s.replace('</title>','</title>\n'+hints,1)
 
-          # Replace loader waterfall with the single generated bundle.
           s=re.sub(r'<script src="assets/app\.js\?v=[^"]+"></script>',f'<script src="assets/site-app.js?v={V}" defer></script>',s,count=1)
-
           p.write_text(s,encoding='utf-8')
           PY
       - name: Verify optimized output
@@ -97,8 +81,8 @@ jobs:
           test -s assets/site-app.js
           grep -q 'assets/site.css?v=20261016-30' index.html
           grep -q 'assets/site-app.js?v=20261016-30' index.html
-          grep -q 'assets/ataturk-final.jpg?v=20261016-30' index.html
-          ! grep -q 'class="brand-orbit hero-portrait" src="data:image' index.html
+          grep -q 'class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v=20261016-30"' index.html
+          grep -q 'class="logo" src="assets/hero-wordmark.png?v=20261016-30"' index.html
       - name: Commit v30
         run: |
           git config user.name 'github-actions[bot]'
