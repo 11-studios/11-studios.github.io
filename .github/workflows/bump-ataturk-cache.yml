@@ -16,14 +16,12 @@ jobs:
           from pathlib import Path
           import re
 
-          # Keep the Ataturk portrait visible.
           base = Path('assets/style-base.css')
           s = base.read_text(encoding='utf-8')
           s = s.replace('background:url("ataturk-hero-v2.webp") center bottom/contain no-repeat!important;', 'background:none!important;background-image:none!important;')
           s = s.replace('.brand-orbit.hero-portrait{display:none!important}', '.brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important}')
           base.write_text(s, encoding='utf-8')
 
-          # Disable the old browser-only admin password check and simplify copy.
           original = Path('assets/app-original.js')
           a = original.read_text(encoding='utf-8')
           a = re.sub(r"const ADMIN_PASS_HASH='[^']*';", "const ADMIN_PASS_HASH='disabled-cloud-only';", a, count=1)
@@ -49,21 +47,14 @@ jobs:
             "feature3Title:'Clean and sustainable'": "feature3Title:'Updates'",
             "feature3Desc:'With clear design, understandable structure, and ongoing version support, we aim for a reliable experience for both staff and players.'": "feature3Desc:'When something breaks on the versions we use, we fix and update it.'"
           }
-          for old,new in replacements.items():
-            a = a.replace(old,new)
+          for old, new in replacements.items():
+            a = a.replace(old, new)
           original.write_text(a, encoding='utf-8')
 
-          # Route account/analytics calls through the Edge Function instead of public SECURITY DEFINER RPCs.
           accounts = Path('assets/cloud-accounts.js')
           c = accounts.read_text(encoding='utf-8')
           pattern = re.compile(r"  async function rpc\(name,payload\)\{\n.*?\n  \}\n\n  const safeUsers=", re.S)
-          replacement = """  async function rpc(name,payload){
-            const c=cfg();
-            if(typeof c.api!=='function')throw new Error('cloud-api-not-ready');
-            return c.api(name,payload||{});
-          }
-
-          const safeUsers="""
+          replacement = "  async function rpc(name,payload){\n    const c=cfg();\n    if(typeof c.api!=='function')throw new Error('cloud-api-not-ready');\n    return c.api(name,payload||{});\n  }\n\n  const safeUsers="
           c, count = pattern.subn(replacement, c, count=1)
           if count != 1:
             raise SystemExit('cloud-accounts rpc patch failed')
@@ -72,9 +63,8 @@ jobs:
           index = Path('index.html')
           s = index.read_text(encoding='utf-8')
           if 'Content-Security-Policy' not in s:
-            security_meta = '''<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://mzrnuiunfxaendnrigzk.supabase.co; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
-<meta name="referrer" content="strict-origin-when-cross-origin">'''
-            s = s.replace('<meta name="theme-color" content="#09070d">', '<meta name="theme-color" content="#09070d">\n'+security_meta, 1)
+            security_meta = '<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob: https:; media-src \'self\' blob: https:; connect-src \'self\' https://mzrnuiunfxaendnrigzk.supabase.co; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src \'none\'; base-uri \'self\'; form-action \'self\'; upgrade-insecure-requests">\n<meta name="referrer" content="strict-origin-when-cross-origin">'
+            s = s.replace('<meta name="theme-color" content="#09070d">', '<meta name="theme-color" content="#09070d">\n' + security_meta, 1)
           s = s.replace('11_ Studios topluluğu için sade bir plugin vitrini. Ücretsiz içerikleri indir, premium projeleri keşfet ve yeni sürümleri tek yerde yayınla.', 'Kendi sunucularımız için yaptığımız pluginleri burada topluyoruz. İşine yararsa al kullan.')
           s = s.replace('11_ Studios tarafından geliştirilen Minecraft sunucu eklentilerini keşfet; ücretsiz araçları indir, premium çözümleri incele.', 'Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.')
           s = s.replace('Bizi neden tercih etmelisiniz?', '11_ Studios')
