@@ -1,4 +1,4 @@
-name: Publish site v29
+name: Publish site v30
 on:
   push:
     paths:
@@ -10,85 +10,100 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Publish secure simple v29
+      - name: Build optimized secure site v30
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          base = Path('assets/style-base.css')
-          s = base.read_text(encoding='utf-8')
-          s = s.replace('background:url("ataturk-hero-v2.webp") center bottom/contain no-repeat!important;', 'background:none!important;background-image:none!important;')
-          s = s.replace('.brand-orbit.hero-portrait{display:none!important}', '.brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important}')
-          base.write_text(s, encoding='utf-8')
+          V='20261016-30'
 
-          original = Path('assets/app-original.js')
-          a = original.read_text(encoding='utf-8')
-          a = re.sub(r"const ADMIN_PASS_HASH='[^']*';", "const ADMIN_PASS_HASH='disabled-cloud-only';", a, count=1)
-          replacements = {
-            "heroDesc:'11_ Studios topluluğu için sade bir plugin vitrini. Ücretsiz içerikleri indir, premium projeleri keşfet ve yeni sürümleri tek yerde yayınla.'": "heroDesc:'Kendi sunucularımız için yaptığımız pluginleri burada topluyoruz. İşine yararsa al kullan.'",
-            "storeDesc:'11_ Studios tarafından geliştirilen Minecraft sunucu eklentilerini keşfet; ücretsiz araçları indir, premium çözümleri incele.'": "storeDesc:'Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.'",
-            "aboutTitle:'Bizi neden tercih etmelisiniz?'": "aboutTitle:'11_ Studios'",
-            "aboutDesc:'Gerçek sunucu ihtiyaçlarından doğan çözümler geliştiriyoruz. Önceliğimiz gösteriş değil; stabil çalışan, temiz görünen ve uzun süre kullanılabilen sistemler üretmek.'": "aboutDesc:'Sunucuda işimize yarayan şeyleri yapıp burada paylaşıyoruz.'",
-            "feature1Title:'Deneyimlerimiz'": "feature1Title:'Sunucuda kullandıklarımız'",
-            "feature1Desc:'Minecraft sunucu eklentileri, arayüz düzenleri ve oyuncu deneyimi odaklı sistemlerde edindiğimiz pratik tecrübeyi doğrudan projelere yansıtıyoruz.'": "feature1Desc:'Pluginleri önce kendi sunucularımızda deniyoruz.'",
-            "feature2Title:'İhtiyaca göre geliştirme'": "feature2Title:'Gereksiz şey yok'",
-            "feature2Desc:'Hazır ama yüzeysel çözümler yerine, sunucunun gerçekten ihtiyaç duyduğu sistemi sade ve kullanılabilir biçimde hazırlıyoruz.'": "feature2Desc:'İşi neyse onu yapıyor. Ayarları mümkün olduğunca sade tutuyoruz.'",
-            "feature3Title:'Temiz ve sürdürülebilir yapı'": "feature3Title:'Güncellemeler'",
-            "feature3Desc:'Sade tasarım, anlaşılır düzen ve devam eden sürüm desteğiyle hem yönetim tarafında hem oyuncu tarafında güven veren bir deneyim sunuyoruz.'": "feature3Desc:'Kullandığımız sürümlerde sorun çıktıkça düzeltip güncelliyoruz.'",
-            "heroDesc:'A clean plugin showcase for the 11_ Studios community. Download free releases, discover premium projects, and publish new versions in one place.'": "heroDesc:'Plugins we build for our own servers, collected in one place. Use whatever helps.'",
-            "storeDesc:'Discover Minecraft server plugins developed by 11_ Studios; download free tools and explore premium solutions.'": "storeDesc:'Minecraft plugins we made. Download the free ones or check the premium ones.'",
-            "aboutTitle:'Why choose us?'": "aboutTitle:'11_ Studios'",
-            "aboutDesc:'We build solutions around real server needs. Our priority is not flashy features, but stable, clean, and maintainable systems.'": "aboutDesc:'We make things we actually need on our servers and share them here.'",
-            "feature1Title:'Our experience'": "feature1Title:'Used on our servers'",
-            "feature1Desc:'We bring our hands-on experience with Minecraft server plugins, interface layouts, and player-focused systems directly into our projects.'": "feature1Desc:'We test plugins on our own servers first.'",
-            "feature2Title:'Built around your needs'": "feature2Title:'No extra clutter'",
-            "feature2Desc:'Instead of generic, surface-level solutions, we build the system the server actually needs in a simple and usable form.'": "feature2Desc:'Each plugin does its job without unnecessary extras.'",
-            "feature3Title:'Clean and sustainable'": "feature3Title:'Updates'",
-            "feature3Desc:'With clear design, understandable structure, and ongoing version support, we aim for a reliable experience for both staff and players.'": "feature3Desc:'When something breaks on the versions we use, we fix and update it.'"
-          }
-          for old, new in replacements.items():
-            a = a.replace(old, new)
-          original.write_text(a, encoding='utf-8')
+          # ----- One CSS request -----
+          base=Path('assets/style-base.css').read_text(encoding='utf-8')
+          style=Path('assets/style.css').read_text(encoding='utf-8')
+          style=re.sub(r'^\s*@import\s+url\(["\']style-base\.css["\']\);\s*','',style,count=1,flags=re.M)
+          css_parts=[
+            base,
+            style,
+            Path('assets/simple.css').read_text(encoding='utf-8'),
+            Path('assets/site-enhancements.css').read_text(encoding='utf-8'),
+            Path('assets/plugin-files.css').read_text(encoding='utf-8'),
+            Path('assets/store-search.css').read_text(encoding='utf-8'),
+          ]
+          site_css='\n'.join(css_parts)
+          # Remove comments and harmless repeated whitespace without touching values.
+          site_css=re.sub(r'/\*.*?\*/','',site_css,flags=re.S)
+          site_css=re.sub(r'\n{3,}','\n\n',site_css)
+          Path('assets/site.css').write_text(site_css,encoding='utf-8')
 
-          accounts = Path('assets/cloud-accounts.js')
-          c = accounts.read_text(encoding='utf-8')
-          pattern = re.compile(r"  async function rpc\(name,payload\)\{\n.*?\n  \}\n\n  const safeUsers=", re.S)
-          replacement = "  async function rpc(name,payload){\n    const c=cfg();\n    if(typeof c.api!=='function')throw new Error('cloud-api-not-ready');\n    return c.api(name,payload||{});\n  }\n\n  const safeUsers="
-          c, count = pattern.subn(replacement, c, count=1)
-          if count != 1:
-            raise SystemExit('cloud-accounts rpc patch failed')
-          accounts.write_text(c, encoding='utf-8')
+          # ----- Remove media request waterfall -----
+          media=Path('assets/app-media.js').read_text(encoding='utf-8')
+          media=media.replace("const heroPromise=loadParts('assets/final-wordmark',8);", "const heroPromise=Promise.resolve('static');")
+          media=media.replace("const faviconPromise=loadParts('assets/final-favicon',4);", "const faviconPromise=Promise.resolve('static');")
+          media=media.replace("img.src=`data:image/png;base64,${heroData}`;", f"img.src='assets/hero-wordmark.png?v={V}';img.decoding='async';")
+          media=media.replace("favicon.type='image/png';favicon.href=`data:image/png;base64,${data}`;", f"favicon.type='image/png';favicon.href='assets/site-icon.png?v={V}';")
 
-          index = Path('index.html')
-          s = index.read_text(encoding='utf-8')
-          if 'Content-Security-Policy' not in s:
-            security_meta = '<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob: https:; media-src \'self\' blob: https:; connect-src \'self\' https://mzrnuiunfxaendnrigzk.supabase.co; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; object-src \'none\'; base-uri \'self\'; form-action \'self\'; upgrade-insecure-requests">\n<meta name="referrer" content="strict-origin-when-cross-origin">'
-            s = s.replace('<meta name="theme-color" content="#09070d">', '<meta name="theme-color" content="#09070d">\n' + security_meta, 1)
-          s = s.replace('11_ Studios topluluğu için sade bir plugin vitrini. Ücretsiz içerikleri indir, premium projeleri keşfet ve yeni sürümleri tek yerde yayınla.', 'Kendi sunucularımız için yaptığımız pluginleri burada topluyoruz. İşine yararsa al kullan.')
-          s = s.replace('11_ Studios tarafından geliştirilen Minecraft sunucu eklentilerini keşfet; ücretsiz araçları indir, premium çözümleri incele.', 'Yaptığımız Minecraft pluginleri. Ücretsiz olanları indir, premium olanlara göz at.')
-          s = s.replace('Bizi neden tercih etmelisiniz?', '11_ Studios')
-          s = s.replace('Gerçek sunucu ihtiyaçlarından doğan çözümler geliştiriyoruz. Önceliğimiz gösteriş değil; stabil çalışan, temiz görünen ve uzun süre kullanılabilen sistemler üretmek.', 'Sunucuda işimize yarayan şeyleri yapıp burada paylaşıyoruz.')
-          s = s.replace('Deneyimlerimiz', 'Sunucuda kullandıklarımız')
-          s = s.replace('Minecraft sunucu eklentileri, arayüz düzenleri ve oyuncu deneyimi odaklı sistemlerde edindiğimiz pratik tecrübeyi doğrudan projelere yansıtıyoruz.', 'Pluginleri önce kendi sunucularımızda deniyoruz.')
-          s = s.replace('İhtiyaca göre geliştirme', 'Gereksiz şey yok')
-          s = s.replace('Hazır ama yüzeysel çözümler yerine, sunucunun gerçekten ihtiyaç duyduğu sistemi sade ve kullanılabilir biçimde hazırlıyoruz.', 'İşi neyse onu yapıyor. Ayarları mümkün olduğunca sade tutuyoruz.')
-          s = s.replace('Temiz ve sürdürülebilir yapı', 'Güncellemeler')
-          s = s.replace('Sade tasarım, anlaşılır düzen ve devam eden sürüm desteğiyle hem yönetim tarafında hem oyuncu tarafında güven veren bir deneyim sunuyoruz.', 'Kullandığımız sürümlerde sorun çıktıkça düzeltip güncelliyoruz.')
-          s = re.sub(r'assets/style\.css\?v=[^"\']+', 'assets/style.css?v=20261016-29', s)
-          s = re.sub(r'assets/app\.js\?v=[^"\']+', 'assets/app.js?v=20261016-29', s)
-          index.write_text(s, encoding='utf-8')
+          start=media.find("  const app=document.createElement('script');")
+          load=media.find("  app.addEventListener('load',()=>{\n",start)
+          end_marker="\n  });\n  document.head.appendChild(app);\n})();"
+          end=media.rfind(end_marker)
+          if min(start,load,end) < 0:
+            raise SystemExit('app-media optimization markers missing')
+          body_start=load+len("  app.addEventListener('load',()=>{\n")
+          media_core=media[:start]+media[body_start:end]+"\n})();\n"
 
-          app = Path('assets/app.js')
-          x = app.read_text(encoding='utf-8')
-          x = re.sub(r"const VERSION='[^']+'", "const VERSION='20261016-29'", x, count=1)
-          app.write_text(x, encoding='utf-8')
+          # ----- One JS request -----
+          js_files=[
+            Path('assets/app-original.js').read_text(encoding='utf-8'),
+            Path('assets/supabase-sync.js').read_text(encoding='utf-8'),
+            Path('assets/cloud-accounts.js').read_text(encoding='utf-8'),
+            media_core,
+            Path('assets/site-enhancements.js').read_text(encoding='utf-8'),
+            Path('assets/plugin-files.js').read_text(encoding='utf-8'),
+            Path('assets/cloud-files.js').read_text(encoding='utf-8'),
+            Path('assets/store-search.js').read_text(encoding='utf-8'),
+          ]
+          Path('assets/site-app.js').write_text('\n;\n'.join(js_files),encoding='utf-8')
+
+          # ----- Lean HTML -----
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          # One stylesheet only.
+          s=re.sub(r'<link rel="stylesheet" href="assets/style\.css\?v=[^"]+">',f'<link rel="stylesheet" href="assets/site.css?v={V}">',s,count=1)
+
+          # Use a small cached favicon instead of rebuilding one in the browser.
+          s=re.sub(r'<link rel="icon" href="[^"]+">',f'<link rel="icon" href="assets/site-icon.png?v={V}" type="image/png">',s,count=1)
+
+          # Replace large embedded header logo with the existing tiny wordmark file.
+          s=re.sub(r'<img class="logo" src="data:image/png;base64,[^"]+" alt="11_ Studios">',f'<img class="logo" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" decoding="async">',s,count=1)
+
+          # Replace the embedded Ataturk JPEG with the verified repository JPEG.
+          s=re.sub(r'<img class="brand-orbit hero-portrait" src="data:image/jpeg;base64,[^"]+" alt="Atatürk">',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v={V}" alt="Atatürk" width="512" height="512" decoding="async" fetchpriority="high">',s,count=1)
+
+          # Preconnect only to the API actually used and preload the above-the-fold portrait.
+          hints=f'<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n<link rel="preload" as="image" href="assets/ataturk-final.jpg?v={V}" fetchpriority="high">'
+          if 'rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co"' not in s:
+            s=s.replace('</title>','</title>\n'+hints,1)
+
+          # Replace loader waterfall with the single generated bundle.
+          s=re.sub(r'<script src="assets/app\.js\?v=[^"]+"></script>',f'<script src="assets/site-app.js?v={V}" defer></script>',s,count=1)
+
+          p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit v29
+      - name: Verify optimized output
+        run: |
+          test -s assets/site.css
+          test -s assets/site-app.js
+          grep -q 'assets/site.css?v=20261016-30' index.html
+          grep -q 'assets/site-app.js?v=20261016-30' index.html
+          grep -q 'assets/ataturk-final.jpg?v=20261016-30' index.html
+          ! grep -q 'class="brand-orbit hero-portrait" src="data:image' index.html
+      - name: Commit v30
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/style-base.css assets/app-original.js assets/cloud-accounts.js assets/app.js
+          git add index.html assets/site.css assets/site-app.js
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v29 security and simple design'
+          git commit -m 'Publish site v30 optimized secure bundle'
           git push
