@@ -1,4 +1,4 @@
-name: Publish site v31
+name: Publish site v32
 on:
   push:
     paths:
@@ -10,13 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build ultra optimized secure site v31
+      - name: Build optimized secure site v32
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
+          import re, base64, hashlib
 
-          V='20261016-31'
+          V='20261016-32'
+
+          # Build the transparent Ataturk PNG from the verified source.
+          raw=base64.b64decode(Path('assets/ataturk-transparent.b64').read_text(encoding='utf-8').strip(), validate=True)
+          assert hashlib.sha256(raw).hexdigest() == 'ddda2c4eb3d5bbf08bbdf620b1e1d8015e3982d55fe961574f60cab1785478e6'
+          assert raw.startswith(b'\x89PNG\r\n\x1a\n')
+          Path('assets/ataturk-transparent.png').write_bytes(raw)
 
           # Build one CSS file from the existing feature-safe sources.
           base=Path('assets/style-base.css').read_text(encoding='utf-8')
@@ -67,30 +73,23 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
 
-          # Single stylesheet and single script bundle.
           s=re.sub(r'<link rel="stylesheet" href="assets/(?:style|site)\.css\?v=[^"]+">',f'<link rel="stylesheet" href="assets/site.css?v={V}">',s,count=1)
           s=re.sub(r'<script src="assets/(?:app|site-app)\.js\?v=[^"]+"(?: defer)?></script>',f'<script src="assets/site-app.js?v={V}" defer></script>',s,count=1)
 
-          # Static, cacheable images instead of large base64 blocks / multipart image assembly.
           s=re.sub(r'<link rel="icon"[^>]*>',f'<link rel="icon" href="assets/site-icon.png?v={V}" type="image/png">',s,count=1)
           s=re.sub(r'<img class="logo"[^>]*>',f'<img class="logo" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" decoding="async" fetchpriority="high">',s,count=1)
           s=re.sub(r'<img class="mark"[^>]*>','',s,count=1)
-          s=re.sub(r'<div class="eyebrow" id="heroEyebrow">.*?</div>',f'<div class="eyebrow" id="heroEyebrow" aria-label="11_ Studios"><img class="hero-wordmark-img" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" data-ready="1" decoding="async"></div>',s,count=1,flags=re.S)
-          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v={V}" alt="Atatürk" width="512" height="512" decoding="async" fetchpriority="high">',s,count=1)
+          s=re.sub(r'<div class="eyebrow" id="heroEyebrow"[^>]*>.*?</div>',f'<div class="eyebrow" id="heroEyebrow" aria-label="11_ Studios"><img class="hero-wordmark-img" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" data-ready="1" decoding="async"></div>',s,count=1,flags=re.S)
+          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-transparent.png?v={V}" alt="Atatürk" width="640" height="604" decoding="async" fetchpriority="high">',s,count=1)
           s=re.sub(r'(<footer class="footer"><div class="container footer-row"><div><img) src="data:image/png;base64,[^"]+"',rf'\1 src="assets/hero-wordmark.png?v={V}" loading="lazy" decoding="async"',s,count=1)
-
-          # This rule already exists in site.css; avoid duplicate inline CSS.
           s=re.sub(r'\n?<style id="remove-ataturk-quote">.*?</style>','',s,count=1,flags=re.S)
 
-          # Keep API setup fast without opening any additional origins in CSP.
-          preload=f'<link rel="preload" as="image" href="assets/ataturk-final.jpg?v={V}" fetchpriority="high">'
+          preload=f'<link rel="preload" as="image" href="assets/ataturk-transparent.png?v={V}" fetchpriority="high">'
+          s=re.sub(r'<link rel="preload" as="image" href="assets/ataturk-(?:final\.jpg|transparent\.png)\?v=[^"]+" fetchpriority="high">',preload,s,count=1)
           if 'rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co"' not in s:
             s=s.replace('</title>','</title>\n<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n'+preload,1)
-          else:
-            if re.search(r'<link rel="preload" as="image" href="assets/ataturk-final\.jpg\?v=[^"]+" fetchpriority="high">',s):
-              s=re.sub(r'<link rel="preload" as="image" href="assets/ataturk-final\.jpg\?v=[^"]+" fetchpriority="high">',preload,s,count=1)
-            else:
-              s=s.replace('<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>','<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n'+preload,1)
+          elif preload not in s:
+            s=s.replace('<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>','<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n'+preload,1)
 
           p.write_text(s,encoding='utf-8')
           PY
@@ -98,18 +97,19 @@ jobs:
         run: |
           test -s assets/site.css
           test -s assets/site-app.js
+          test -s assets/ataturk-transparent.png
           node --check assets/site-app.js
-          grep -q 'assets/site.css?v=20261016-31' index.html
-          grep -q 'assets/site-app.js?v=20261016-31' index.html
-          grep -q 'class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v=20261016-31"' index.html
-          grep -q 'class="logo" src="assets/hero-wordmark.png?v=20261016-31"' index.html
+          grep -q 'assets/site.css?v=20261016-32' index.html
+          grep -q 'assets/site-app.js?v=20261016-32' index.html
+          grep -q 'class="brand-orbit hero-portrait" src="assets/ataturk-transparent.png?v=20261016-32"' index.html
+          grep -q 'class="logo" src="assets/hero-wordmark.png?v=20261016-32"' index.html
           ! grep -q 'class="mark"' index.html
           ! grep -q 'class="brand-orbit hero-portrait" src="data:image' index.html
-      - name: Commit v31
+      - name: Commit v32
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/site.css assets/site-app.js
+          git add index.html assets/site.css assets/site-app.js assets/ataturk-transparent.png
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v31 ultra optimized secure bundle'
+          git commit -m 'Publish site v32 transparent Ataturk portrait'
           git push
