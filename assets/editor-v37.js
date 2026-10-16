@@ -8,6 +8,7 @@
   let selectedId='';
   let dirty=false;
   let frameReady=false;
+  let initialPreviewTopDone=false;
   let viewport={scrollY:0,viewportHeight:800,docHeight:1200};
 
   const $=id=>document.getElementById(id);
@@ -25,32 +26,33 @@
   function status(text,kind=''){const el=$('saveStatus');if(!el)return;el.textContent=text;el.className=`editor-status ${kind}`.trim();}
   function markDirty(text='Kaydedilmemiş değişiklikler var.'){dirty=true;status(text);}
   function selected(){return state.elements.find(x=>x.id===selectedId)||null;}
-  function sendState(){if(frameReady)$('siteFrame')?.contentWindow?.postMessage({type:'11:editor-state-v39',state},location.origin);}
+  function sendState(){if(frameReady)$('siteFrame')?.contentWindow?.postMessage({type:'11:editor-state-v41',state},location.origin);}
   function choose(id){selectedId=id||'';renderProperties();}
   function updateSelectedChip(){const item=selected(),chip=$('selectedChip');if(!chip)return;chip.textContent=item?(item.type==='text'?'Yazı':'Görsel'):'Öğe seçilmedi';}
   function syncPositionFields(item){
     const x=$('propX'),y=$('propY');
     if(x)x.value=String(Number(clamp(item?.x,0,96,0).toFixed(1)));
-    if(y)y.value=String(Number(clamp(item?.y,0,99,0).toFixed(1)));
+    if(y)y.value=String(Number(clamp(item?.y,0,98,0).toFixed(1)));
   }
   function insertionY(){
     const doc=Math.max(1,Number(viewport.docHeight)||1),scroll=Math.max(0,Number(viewport.scrollY)||0),vh=Math.max(1,Number(viewport.viewportHeight)||1);
-    return clamp((scroll+Math.min(vh*.24,190))/doc*100,0,96,8);
+    const target=scroll+Math.min(vh*.2,150);
+    return clamp(target/doc*100,0,94,5);
   }
   function injectPreviewRuntime(){
     const frame=$('siteFrame');
     try{
       const win=frame?.contentWindow,doc=frame?.contentDocument;
-      if(!win||!doc||win.__11EditorRuntime39)return;
-      if(doc.getElementById('editorRuntime39'))return;
-      const s=doc.createElement('script');s.id='editorRuntime39';s.src='assets/editor-runtime-v37.js?v=20261016-39';s.async=false;
+      if(!win||!doc||win.__11EditorRuntime41)return;
+      if(doc.getElementById('editorRuntime41'))return;
+      const s=doc.createElement('script');s.id='editorRuntime41';s.src='assets/editor-runtime-v37.js?v=20261016-41';s.async=false;
       (doc.body||doc.documentElement).appendChild(s);
     }catch(err){console.warn('[11_ Editor] preview runtime inject failed',err);}
   }
 
   function commonFields(item){
-    const x=clamp(item.x,0,96,8),y=clamp(item.y,0,99,8),w=clamp(item.width,4,96,24),o=clamp(item.opacity,.05,1,1),z=Math.round(clamp(item.z,1,100,10));
-    return `<div class="editor-pos-row"><div class="editor-field"><label>X konumu (sayfa %)</label><input id="propX" type="number" min="0" max="96" step="0.1" value="${x.toFixed(1)}"></div><div class="editor-field"><label>Y konumu (sayfa %)</label><input id="propY" type="number" min="0" max="99" step="0.1" value="${y.toFixed(1)}"></div></div>
+    const x=clamp(item.x,0,96,8),y=clamp(item.y,0,98,8),w=clamp(item.width,4,96,24),o=clamp(item.opacity,.05,1,1),z=Math.round(clamp(item.z,1,100,10));
+    return `<div class="editor-pos-row"><div class="editor-field"><label>X konumu (sayfa %)</label><input id="propX" type="number" min="0" max="96" step="0.1" value="${x.toFixed(1)}"></div><div class="editor-field"><label>Y konumu (sayfa %)</label><input id="propY" type="number" min="0" max="98" step="0.1" value="${y.toFixed(1)}"></div></div>
       <div class="editor-field"><label>Genişlik</label><div class="range-row"><input id="propWidth" type="range" min="4" max="96" step="1" value="${w}"><output id="propWidthOut">${Math.round(w)}%</output></div></div>
       <div class="editor-field"><label>Saydamlık</label><div class="range-row"><input id="propOpacity" type="range" min="0.05" max="1" step="0.01" value="${o}"><output id="propOpacityOut">${Math.round(o*100)}%</output></div></div>
       <div class="editor-field"><label>Katman</label><input id="propZ" type="number" min="1" max="100" value="${z}"></div>`;
@@ -60,13 +62,13 @@
     updateSelectedChip();
     if(!item){if(props)props.innerHTML='<div class="prop-empty">Önizlemeden bir öğeye tıkla veya yeni bir öğe ekle.</div>';if(del)del.disabled=true;return;}
     if(del)del.disabled=false;
-    if(item.type==='text')props.innerHTML=`${commonFields(item)}<div class="editor-note">Konum tüm sayfaya göredir; önizlemede istediğin yere sürükleyebilirsin.</div><div class="editor-field"><label>Yazı</label><textarea id="propText" maxlength="1000">${esc(item.text||'')}</textarea></div><div class="editor-field"><label>Renk</label><input id="propColor" type="color" value="${/^#[0-9a-f]{6}$/i.test(String(item.color||''))?item.color:'#cba7ff'}"></div><div class="editor-field"><label>Yazı boyutu</label><input id="propFont" type="number" min="10" max="120" value="${Math.round(clamp(item.fontSize,10,120,32))}"></div><div class="editor-field"><label>Kalınlık</label><select id="propWeight"><option value="400">Normal</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option></select></div><div class="editor-field"><label>Hizalama</label><select id="propAlign"><option value="left">Sol</option><option value="center">Orta</option><option value="right">Sağ</option></select></div>`;
-    else props.innerHTML=`${commonFields(item)}<div class="editor-note">Konum tüm sayfaya göredir; önizlemede istediğin yere sürükleyebilirsin.</div><div class="editor-field"><label>Alt metin</label><input id="propAlt" maxlength="180" value="${esc(item.alt||'')}"></div><div class="editor-note">Görsel veritabanında güvenli görsel verisi olarak tutulur; HTML veya script çalıştırılmaz.</div>`;
+    if(item.type==='text')props.innerHTML=`${commonFields(item)}<div class="editor-note">Konum tüm sayfaya göredir. Öğeyi yukarı/aşağı sürüklerken sayfa otomatik kayar.</div><div class="editor-field"><label>Yazı</label><textarea id="propText" maxlength="1000">${esc(item.text||'')}</textarea></div><div class="editor-field"><label>Renk</label><input id="propColor" type="color" value="${/^#[0-9a-f]{6}$/i.test(String(item.color||''))?item.color:'#cba7ff'}"></div><div class="editor-field"><label>Yazı boyutu</label><input id="propFont" type="number" min="10" max="120" value="${Math.round(clamp(item.fontSize,10,120,32))}"></div><div class="editor-field"><label>Kalınlık</label><select id="propWeight"><option value="400">Normal</option><option value="500">500</option><option value="600">600</option><option value="700">700</option><option value="800">800</option></select></div><div class="editor-field"><label>Hizalama</label><select id="propAlign"><option value="left">Sol</option><option value="center">Orta</option><option value="right">Sağ</option></select></div>`;
+    else props.innerHTML=`${commonFields(item)}<div class="editor-note">Konum tüm sayfaya göredir. Öğeyi yukarı/aşağı sürüklerken sayfa otomatik kayar.</div><div class="editor-field"><label>Alt metin</label><input id="propAlt" maxlength="180" value="${esc(item.alt||'')}"></div><div class="editor-note">Görsel veritabanında güvenli görsel verisi olarak tutulur; HTML veya script çalıştırılmaz.</div>`;
     bindProperties(item);
   }
   function bindProperties(item){
     const x=$('propX');if(x)x.oninput=()=>{item.x=clamp(x.value,0,96,item.x);markDirty();sendState();};
-    const y=$('propY');if(y)y.oninput=()=>{item.y=clamp(y.value,0,99,item.y);markDirty();sendState();};
+    const y=$('propY');if(y)y.oninput=()=>{item.y=clamp(y.value,0,98,item.y);markDirty();sendState();};
     const width=$('propWidth');if(width)width.oninput=()=>{const n=clamp(width.value,4,96,24);$('propWidthOut').textContent=`${Math.round(n)}%`;item.width=n;markDirty();sendState();};
     const opacity=$('propOpacity');if(opacity)opacity.oninput=()=>{const n=clamp(opacity.value,.05,1,1);$('propOpacityOut').textContent=`${Math.round(n*100)}%`;item.opacity=n;markDirty();sendState();};
     const z=$('propZ');if(z)z.oninput=()=>{item.z=Math.round(clamp(z.value,1,100,10));markDirty();sendState();};
@@ -101,7 +103,7 @@
   async function addImage(file){
     status('Görsel hazırlanıyor…');
     try{
-      const image=await compressImage(file),item={id:uid(),type:'image',x:60,y:insertionY(),width:28,opacity:1,z:10,image,alt:file.name.slice(0,180)};
+      const image=await compressImage(file),item={id:uid(),type:'image',x:36,y:insertionY(),width:24,opacity:1,z:10,image,alt:file.name.slice(0,180)};
       state.elements.push(item);selectedId=item.id;markDirty();renderProperties();sendState();
     }catch(err){status(err.message==='gif_too_large'?'Animasyonlu GIF yaklaşık 320 KB’dan küçük olmalı.':'Görsel eklenemedi. Dosyayı küçültüp tekrar dene.','bad');}
   }
@@ -132,7 +134,7 @@
     let changed=false;
     items.forEach(p=>{
       const item=state.elements.find(x=>x.id===p.id);if(!item||!item.section)return;
-      item.x=clamp(p.x,0,96,item.x);item.y=clamp(p.y,0,99,item.y);item.width=clamp(p.width,4,96,item.width);delete item.section;changed=true;
+      item.x=clamp(p.x,0,96,item.x);item.y=clamp(p.y,0,98,item.y);item.width=clamp(p.width,4,96,item.width);delete item.section;changed=true;
     });
     if(changed){markDirty('Eski bölüm yerleşimleri serbest konuma çevrildi. Kaydettiğinde tüm cihazlara uygulanacak.');renderProperties();sendState();}
   }
@@ -143,12 +145,16 @@
     const frame=$('siteFrame');if(frame){frame.addEventListener('load',()=>setTimeout(injectPreviewRuntime,0));if(frame.contentDocument?.readyState==='complete')setTimeout(injectPreviewRuntime,0);}
     window.addEventListener('message',e=>{
       if(e.origin!==location.origin||!e.data)return;
-      if(e.data.type==='11:editor-ready-v39'){frameReady=true;sendState();}
-      if(e.data.type==='11:editor-select-v39')choose(e.data.id);
-      if(e.data.type==='11:editor-viewport-v39')viewport={scrollY:Math.max(0,Number(e.data.scrollY)||0),viewportHeight:Math.max(1,Number(e.data.viewportHeight)||1),docHeight:Math.max(1,Number(e.data.docHeight)||1)};
-      if(e.data.type==='11:editor-normalize-v39')normalizeLegacy(e.data.items);
-      if(e.data.type==='11:editor-move-v39'){
-        const item=state.elements.find(x=>x.id===e.data.id);if(item){item.x=clamp(e.data.x,0,96,item.x);item.y=clamp(e.data.y,0,99,item.y);delete item.section;selectedId=item.id;markDirty();updateSelectedChip();syncPositionFields(item);}
+      if(['11:editor-ready-v41','11:editor-ready-v40','11:editor-ready-v39'].includes(e.data.type)){
+        frameReady=true;
+        if(!initialPreviewTopDone){initialPreviewTopDone=true;try{$('siteFrame')?.contentWindow?.scrollTo(0,0);}catch{}viewport.scrollY=0;}
+        sendState();
+      }
+      if(['11:editor-select-v41','11:editor-select-v40','11:editor-select-v39'].includes(e.data.type))choose(e.data.id);
+      if(['11:editor-viewport-v41','11:editor-viewport-v40','11:editor-viewport-v39'].includes(e.data.type))viewport={scrollY:Math.max(0,Number(e.data.scrollY)||0),viewportHeight:Math.max(1,Number(e.data.viewportHeight)||1),docHeight:Math.max(1,Number(e.data.docHeight)||1)};
+      if(['11:editor-normalize-v41','11:editor-normalize-v40','11:editor-normalize-v39'].includes(e.data.type))normalizeLegacy(e.data.items);
+      if(['11:editor-move-v41','11:editor-move-v40','11:editor-move-v39'].includes(e.data.type)){
+        const item=state.elements.find(x=>x.id===e.data.id);if(item){item.x=clamp(e.data.x,0,96,item.x);item.y=clamp(e.data.y,0,98,item.y);delete item.section;selectedId=item.id;markDirty();updateSelectedChip();syncPositionFields(item);}
       }
     });
     window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
