@@ -3,6 +3,7 @@
 
   const SUPABASE_URL='https://mzrnuiunfxaendnrigzk.supabase.co';
   const EDITOR_API=`${SUPABASE_URL}/functions/v1/editor-api`;
+  const CACHE_KEY='11_editor_state_cache_v2';
   const preview=new URLSearchParams(location.search).get('editorPreview')==='1';
   let state={elements:[]};
   let globalHost=null;
@@ -17,6 +18,10 @@
     const r=await fetch(EDITOR_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload}),cache:'no-store',credentials:'omit'});
     if(!r.ok)throw new Error(`${action}:${r.status}`);
     return r.json();
+  }
+
+  function persist(next){
+    try{if(next&&Array.isArray(next.elements)){localStorage.setItem(CACHE_KEY,JSON.stringify(next));window.__11EditorCachedState=next;}}catch{}
   }
 
   function pageBottom(){
@@ -61,7 +66,8 @@
     }else if(item.type==='image'&&/^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(String(item.image||''))){
       el=document.createElement('img');
       el.className='site-editor-element site-editor-image';
-      el.src=item.image;el.alt=String(item.alt||'');el.decoding='async';el.draggable=false;
+      el.src=item.image;el.alt=String(item.alt||'');el.loading='eager';el.decoding=preview?'async':'sync';el.draggable=false;
+      try{el.fetchPriority='high';}catch{}
       el.addEventListener('load',()=>{syncLayerSize();postViewport();},{once:true});
     }else return null;
     el.dataset.editorId=String(item.id||'');
@@ -76,6 +82,7 @@
   function render(next){
     if(activeDrag)return;
     state=next&&Array.isArray(next.elements)?{elements:next.elements.map(x=>({...x}))}:{elements:[]};
+    persist(state);
     cleanLayers();
     const host=globalLayer();if(!host)return;
     state.elements.forEach(item=>{
@@ -129,6 +136,7 @@
     const d=activeDrag;if(!d||e.pointerId!==d.pointerId)return;e.preventDefault();activeDrag=null;stopAutoScroll();d.el.classList.remove('is-dragging');
     window.removeEventListener('pointermove',dragMove,true);window.removeEventListener('pointerup',finishDrag,true);window.removeEventListener('pointercancel',finishDrag,true);
     try{if(d.el.hasPointerCapture?.(e.pointerId))d.el.releasePointerCapture(e.pointerId);}catch{}
+    persist(state);
     window.parent.postMessage({type:'11:editor-move-v44',id:d.item.id,x:d.item.x,y:d.item.y},location.origin);
   }
 
@@ -155,7 +163,16 @@
 
   function sendReady(){if(preview)window.parent.postMessage({type:'11:editor-ready-v44'},location.origin);}
 
-  async function load(){try{const data=await editorApi('get');render(data?.data||{elements:[]});}catch(err){console.warn('[11_ Studios] editor state load failed',err);}}
+  async function load(){
+    const cached=window.__11EditorCachedState;
+    if(cached&&Array.isArray(cached.elements))render(cached);
+    try{
+      let next=null;
+      if(window.__11EditorStatePromise)next=await window.__11EditorStatePromise;
+      else{const data=await editorApi('get');next=data?.data||{elements:[]};}
+      if(next&&Array.isArray(next.elements))render(next);
+    }catch(err){console.warn('[11_ Studios] editor state load failed',err);}
+  }
 
   function installAdminEditorButton(){
     const notice=document.getElementById('adminNotice');if(!notice)return;
@@ -179,13 +196,13 @@
     window.addEventListener('resize',()=>{syncLayerSize();postViewport();},{passive:true});
     window.addEventListener('load',()=>{syncLayerSize();postViewport();},{once:true});
     [0,80,220,500,1000].forEach(ms=>setTimeout(sendReady,ms));
-    setTimeout(()=>{if(!parentStateReceived)load();},500);
+    setTimeout(()=>{if(!parentStateReceived)load();},120);
   }
 
   function init(){
     installAdminEditorButton();document.getElementById('adminBtn')?.addEventListener('click',()=>setTimeout(installAdminEditorButton,20));
     if(preview)initPreview();
-    else{load();window.addEventListener('resize',syncLayerSize,{passive:true});window.addEventListener('load',()=>{syncLayerSize();setTimeout(syncLayerSize,300);},{once:true});}
+    else{load();window.addEventListener('resize',syncLayerSize,{passive:true});window.addEventListener('load',()=>{syncLayerSize();setTimeout(syncLayerSize,120);},{once:true});}
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
