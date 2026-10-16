@@ -25,7 +25,7 @@
   function status(text,kind=''){const el=$('saveStatus');if(!el)return;el.textContent=text;el.className=`editor-status ${kind}`.trim();}
   function markDirty(text='Kaydedilmemiş değişiklikler var.'){dirty=true;status(text);}
   function selected(){return state.elements.find(x=>x.id===selectedId)||null;}
-  function sendState(){if(frameReady)$('siteFrame')?.contentWindow?.postMessage({type:'11:editor-state',state},location.origin);}
+  function sendState(){if(frameReady)$('siteFrame')?.contentWindow?.postMessage({type:'11:editor-state-v39',state},location.origin);}
   function choose(id){selectedId=id||'';renderProperties();}
   function updateSelectedChip(){const item=selected(),chip=$('selectedChip');if(!chip)return;chip.textContent=item?(item.type==='text'?'Yazı':'Görsel'):'Öğe seçilmedi';}
   function syncPositionFields(item){
@@ -36,6 +36,16 @@
   function insertionY(){
     const doc=Math.max(1,Number(viewport.docHeight)||1),scroll=Math.max(0,Number(viewport.scrollY)||0),vh=Math.max(1,Number(viewport.viewportHeight)||1);
     return clamp((scroll+Math.min(vh*.24,190))/doc*100,0,96,8);
+  }
+  function injectPreviewRuntime(){
+    const frame=$('siteFrame');
+    try{
+      const win=frame?.contentWindow,doc=frame?.contentDocument;
+      if(!win||!doc||win.__11EditorRuntime39)return;
+      if(doc.getElementById('editorRuntime39'))return;
+      const s=doc.createElement('script');s.id='editorRuntime39';s.src='assets/editor-runtime-v37.js?v=20261016-39';s.async=false;
+      (doc.body||doc.documentElement).appendChild(s);
+    }catch(err){console.warn('[11_ Editor] preview runtime inject failed',err);}
   }
 
   function commonFields(item){
@@ -130,13 +140,14 @@
     $('addTextBtn').onclick=addText;$('addImageBtn').onclick=()=>$('imageInput').click();$('imageInput').onchange=e=>{const f=e.target.files?.[0];if(f)addImage(f);e.target.value='';};
     $('deleteBtn').onclick=()=>{if(!selectedId)return;state.elements=state.elements.filter(x=>x.id!==selectedId);selectedId='';markDirty();renderProperties();sendState();};
     $('saveBtn').onclick=save;$('reloadBtn').onclick=()=>{if(!dirty||confirm('Kaydedilmemiş değişiklikleri bırakıp buluttan yenilemek istiyor musun?'))loadCloud();};
+    const frame=$('siteFrame');if(frame){frame.addEventListener('load',()=>setTimeout(injectPreviewRuntime,0));if(frame.contentDocument?.readyState==='complete')setTimeout(injectPreviewRuntime,0);}
     window.addEventListener('message',e=>{
       if(e.origin!==location.origin||!e.data)return;
-      if(e.data.type==='11:editor-ready'){frameReady=true;sendState();}
-      if(e.data.type==='11:editor-select')choose(e.data.id);
-      if(e.data.type==='11:editor-viewport')viewport={scrollY:Math.max(0,Number(e.data.scrollY)||0),viewportHeight:Math.max(1,Number(e.data.viewportHeight)||1),docHeight:Math.max(1,Number(e.data.docHeight)||1)};
-      if(e.data.type==='11:editor-normalize')normalizeLegacy(e.data.items);
-      if(e.data.type==='11:editor-move'){
+      if(e.data.type==='11:editor-ready-v39'){frameReady=true;sendState();}
+      if(e.data.type==='11:editor-select-v39')choose(e.data.id);
+      if(e.data.type==='11:editor-viewport-v39')viewport={scrollY:Math.max(0,Number(e.data.scrollY)||0),viewportHeight:Math.max(1,Number(e.data.viewportHeight)||1),docHeight:Math.max(1,Number(e.data.docHeight)||1)};
+      if(e.data.type==='11:editor-normalize-v39')normalizeLegacy(e.data.items);
+      if(e.data.type==='11:editor-move-v39'){
         const item=state.elements.find(x=>x.id===e.data.id);if(item){item.x=clamp(e.data.x,0,96,item.x);item.y=clamp(e.data.y,0,99,item.y);delete item.section;selectedId=item.id;markDirty();updateSelectedChip();syncPositionFields(item);}
       }
     });
