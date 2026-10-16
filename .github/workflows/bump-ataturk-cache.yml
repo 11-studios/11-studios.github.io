@@ -10,93 +10,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build optimized secure site v35
+      - name: Install transparent Ataturk portrait
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re, base64, hashlib
+          import base64, hashlib, re
 
           V='20261016-35'
-
-          parts=[
-              Path('assets/ataturk-v35-a.b64').read_text(encoding='utf-8').strip(),
-              Path('assets/ataturk-v35-b.b64').read_text(encoding='utf-8').strip(),
-              Path('assets/ataturk-v35-c.b64').read_text(encoding='utf-8').strip(),
-              Path('assets/ataturk-v35-d.b64').read_text(encoding='utf-8').strip(),
-              Path('assets/ataturk-v35-e.b64').read_text(encoding='utf-8').strip(),
-              Path('assets/ataturk-v35-f.b64').read_text(encoding='utf-8').strip(),
-              Path('assets/ataturk-v35-g.b64').read_text(encoding='utf-8').strip(),
-          ]
+          names='abcdefg'
+          parts=[Path(f'assets/ataturk-v35-{x}.b64').read_text(encoding='utf-8').strip() for x in names]
           raw=base64.b64decode(''.join(parts), validate=True)
           assert raw.startswith(b'\x89PNG\r\n\x1a\n'), 'invalid PNG'
           assert hashlib.sha256(raw).hexdigest() == 'dd9490378349b11424cbadb915d040e15519863cf386dfbfc0fd9a2484308752', 'portrait checksum mismatch'
           Path('assets/ataturk-cutout.png').write_bytes(raw)
 
-          base=Path('assets/style-base.css').read_text(encoding='utf-8')
-          style=Path('assets/style.css').read_text(encoding='utf-8')
-          style=re.sub(r'^\s*@import\s+url\(["\']style-base\.css["\']\);\s*','',style,count=1,flags=re.M)
-          css_parts=[base,style,Path('assets/simple.css').read_text(encoding='utf-8'),Path('assets/site-enhancements.css').read_text(encoding='utf-8'),Path('assets/plugin-files.css').read_text(encoding='utf-8'),Path('assets/store-search.css').read_text(encoding='utf-8')]
-          site_css='\n'.join(css_parts)
-          site_css=re.sub(r'/\*.*?\*/','',site_css,flags=re.S)
-          site_css=re.sub(r'\n{3,}','\n\n',site_css)
-          site_css += '\n@supports (content-visibility:auto){#about{content-visibility:auto;contain-intrinsic-size:auto 520px}}\n#top .hero-visual .orbit-wrap .hero-portrait{width:520px!important;max-width:100%!important;height:auto!important;image-rendering:auto!important;object-fit:contain!important;object-position:center bottom!important;background:transparent!important;box-shadow:none!important;filter:none!important;-webkit-mask-image:none!important;mask-image:none!important}\n'
-          Path('assets/site.css').write_text(site_css,encoding='utf-8')
-
-          media=Path('assets/app-media.js').read_text(encoding='utf-8')
-          media=media.replace("const heroPromise=loadParts('assets/final-wordmark',8);", "const heroPromise=Promise.resolve('static');")
-          media=media.replace("const faviconPromise=loadParts('assets/final-favicon',4);", "const faviconPromise=Promise.resolve('static');")
-          media=media.replace("img.src=`data:image/png;base64,${heroData}`;", f"img.src='assets/hero-wordmark.png?v={V}';img.decoding='async';")
-          media=media.replace("favicon.type='image/png';favicon.href=`data:image/png;base64,${data}`;", f"favicon.type='image/png';favicon.href='assets/site-icon.png?v={V}';")
-          start=media.find("  const app=document.createElement('script');")
-          load=media.find("  app.addEventListener('load',()=>{\n",start)
-          end_marker="\n  });\n  document.head.appendChild(app);\n})();"
-          end=media.rfind(end_marker)
-          if min(start,load,end) < 0: raise SystemExit('app-media optimization markers missing')
-          body_start=load+len("  app.addEventListener('load',()=>{\n")
-          media_core=media[:start]+media[body_start:end]+"\n})();\n"
-
-          js_files=[Path('assets/app-original.js').read_text(encoding='utf-8'),Path('assets/supabase-sync.js').read_text(encoding='utf-8'),Path('assets/cloud-accounts.js').read_text(encoding='utf-8'),media_core,Path('assets/site-enhancements.js').read_text(encoding='utf-8'),Path('assets/plugin-files.js').read_text(encoding='utf-8'),Path('assets/cloud-files.js').read_text(encoding='utf-8'),Path('assets/store-search.js').read_text(encoding='utf-8')]
-          Path('assets/site-app.js').write_text('\n;\n'.join(js_files),encoding='utf-8')
-
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'<link rel="stylesheet" href="assets/(?:style|site)\.css\?v=[^"]+">',f'<link rel="stylesheet" href="assets/site.css?v={V}">',s,count=1)
-          s=re.sub(r'<script src="assets/(?:app|site-app)\.js\?v=[^"]+"(?: defer)?></script>',f'<script src="assets/site-app.js?v={V}" defer></script>',s,count=1)
-          s=re.sub(r'<link rel="icon"[^>]*>',f'<link rel="icon" href="assets/site-icon.png?v={V}" type="image/png">',s,count=1)
-          s=re.sub(r'<img class="logo"[^>]*>',f'<img class="logo" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" decoding="async" fetchpriority="high">',s,count=1)
-          s=re.sub(r'<img class="mark"[^>]*>','',s,count=1)
-          s=re.sub(r'<div class="eyebrow" id="heroEyebrow"[^>]*>.*?</div>',f'<div class="eyebrow" id="heroEyebrow" aria-label="11_ Studios"><img class="hero-wordmark-img" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" data-ready="1" decoding="async"></div>',s,count=1,flags=re.S)
-          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-cutout.png?v={V}" alt="Atatürk" width="512" height="422" decoding="async" fetchpriority="high">',s,count=1)
-          s=re.sub(r'(<footer class="footer"><div class="container footer-row"><div><img) src="data:image/png;base64,[^"]+"',rf'\1 src="assets/hero-wordmark.png?v={V}" loading="lazy" decoding="async"',s,count=1)
-          s=re.sub(r'\n?<style id="remove-ataturk-quote">.*?</style>','',s,count=1,flags=re.S)
+          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>', f'<img class="brand-orbit hero-portrait" src="assets/ataturk-cutout.png?v={V}" alt="Atatürk" width="512" height="422" decoding="async" fetchpriority="high">', s, count=1)
           preload=f'<link rel="preload" as="image" href="assets/ataturk-cutout.png?v={V}" type="image/png" fetchpriority="high">'
-          s=re.sub(r'<link rel="preload" as="image" href="assets/ataturk-[^"]+\?v=[^"]+"(?: type="image/[^\"]+")? fetchpriority="high">',preload,s,count=1)
-          if 'rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co"' not in s:
-            s=s.replace('</title>','</title>\n<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n'+preload,1)
-          elif preload not in s:
-            s=s.replace('<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>','<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n'+preload,1)
-          p.write_text(s,encoding='utf-8')
+          s=re.sub(r'<link rel="preload" as="image" href="assets/ataturk-[^"]+\?v=[^"]+"(?: type="image/[^"]+")? fetchpriority="high">', preload, s, count=1)
+          s=re.sub(r'<link rel="stylesheet" href="assets/site\.css\?v=[^"]+">', f'<link rel="stylesheet" href="assets/site.css?v={V}">', s, count=1)
+          p.write_text(s, encoding='utf-8')
+
+          css=Path('assets/site.css')
+          c=css.read_text(encoding='utf-8')
+          c += '\n/* v35 transparent portrait */\n#top .hero-visual .orbit-wrap .brand-orbit.hero-portrait{display:block!important;visibility:visible!important;opacity:1!important;width:520px!important;max-width:100%!important;height:auto!important;object-fit:contain!important;object-position:center bottom!important;image-rendering:auto!important;background:transparent!important;box-shadow:none!important;filter:none!important;-webkit-mask-image:none!important;mask-image:none!important;border-radius:0!important}\n#top .hero-visual .orbit-wrap{background:none!important;background-image:none!important;overflow:visible!important}\n'
+          css.write_text(c, encoding='utf-8')
           PY
-      - name: Verify optimized output
+      - name: Verify portrait
         run: |
-          test -s assets/site.css
-          test -s assets/site-app.js
           test -s assets/ataturk-cutout.png
-          node --check assets/site-app.js
           python - <<'PY'
           from pathlib import Path
           import hashlib
           raw=Path('assets/ataturk-cutout.png').read_bytes()
+          assert len(raw) == 40588
           assert hashlib.sha256(raw).hexdigest() == 'dd9490378349b11424cbadb915d040e15519863cf386dfbfc0fd9a2484308752'
           PY
+          grep -q 'assets/ataturk-cutout.png?v=20261016-35' index.html
           grep -q 'assets/site.css?v=20261016-35' index.html
-          grep -q 'assets/site-app.js?v=20261016-35' index.html
-          grep -q 'class="brand-orbit hero-portrait" src="assets/ataturk-cutout.png?v=20261016-35"' index.html
       - name: Commit v35
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/site.css assets/site-app.js assets/ataturk-cutout.png
+          git add index.html assets/site.css assets/ataturk-cutout.png
           git diff --cached --quiet && exit 0
           git commit -m 'Publish site v35 transparent Ataturk PNG'
           git push
