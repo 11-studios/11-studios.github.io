@@ -11,8 +11,8 @@
 <link rel="preload" as="image" href="assets/ataturk-cutout.png?v=20261016-36" type="image/png" fetchpriority="high">
 <link rel="icon" href="assets/site-icon.png?v=20261016-34" type="image/png">
 <link rel="stylesheet" href="assets/site.css?v=20261016-36">
-<link rel="stylesheet" href="assets/plugin-browser-v37.css?v=20261016-40">
-<link rel="stylesheet" href="assets/editor-runtime-v37.css?v=20261016-40">
+<link rel="stylesheet" href="assets/plugin-browser-v37.css?v=20261016-41">
+<link rel="stylesheet" href="assets/editor-runtime-v37.css?v=20261016-41">
 </head>
 <body>
 <header class="topbar">
@@ -46,7 +46,7 @@
 
 <section class="section" id="plugins">
   <div class="container">
-    <div class="section-head"><div><div class="kicker" id="storeKicker">11_ Studios</div><h2 id="storeTitle">Pluginler</h2></div><p id="storeDesc">Minecraft sunucuları için yayınladığımız pluginler.</p></div>
+    <div class="section-head"><div><div class="kicker" id="storeKicker">11_ Studios</div><h2 id="storeTitle">Pluginler</h2></div><p id="storeDesc"></p></div>
     <div class="filters" id="filters"><button class="filter active" id="filterAll" data-filter="all">Tümü</button><button class="filter" id="filterFree" data-filter="free">Ücretsiz</button><button class="filter" id="filterPaid" data-filter="paid">Premium</button><button class="filter" id="filterUtility" data-filter="utility">Araçlar</button><button class="filter" id="filterSecurity" data-filter="security">Güvenlik</button></div>
     <div class="market-surface"><div class="market-inner"><div class="market-title"><h3>Pluginler</h3><span id="pluginCountBadge">0 plugin</span></div><div class="plugin-grid" id="pluginGrid"></div></div></div>
   </div>
@@ -54,7 +54,7 @@
 
 <section class="section" id="about">
   <div class="container">
-    <div class="section-head"><div><div class="kicker">11_ Studios</div><h2 id="aboutTitle">11_ Studios</h2></div><p id="aboutDesc">Sunucuda işimize yarayan şeyleri yapıp burada paylaşıyoruz.</p></div>
+    <div class="section-head"><div><div class="kicker">11_ Studios</div><h2 id="aboutTitle">11_ Studios</h2></div><p id="aboutDesc"></p></div>
     <div class="features">
       <article class="feature"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAnklEQVR4XmNgGLQgKrPwPzpGV4MTgBSvPv/4/6X3/+EYxCfKEGTNMPDu518wJmgISLJuxjI4RgYgA0CG4jQAJIHsZJiz0Q0AGYxhiJGrP1gS5lQYQDYEZgCIDzIEpAdDMzYAk4NphlkCNwTddnRXYAMYBsBCHd0QXAbBXAM3wC21HCyAHvfYMEwdSA9KOIAESMFwzTAAEiAFo2geUAAASlrJatXhkg8AAAAASUVORK5CYII=" alt=""><h3 id="feature1Title">Sunucuda kullandıklarımız</h3><p id="feature1Desc">Pluginleri önce kendi sunucularımızda deniyoruz.</p></article>
       <article class="feature"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAoUlEQVR4XmNgGFRAVUPvv4OLNxiHRiWjYJg4SA26PjgAKXj08jteDFKDrg8OQDaBFIWn1P0vqe1DwSAxkBxIDbo+OABJXrrxGOxMbBgkh9cAkPN27T+B1Z8gMZAcTi8gByC+QMQZkMQEIN6ARDcA2UZscuj6wQaAAgmGsQUgDGM1ABZIyBimGZs4un6sBuDCOA3AloDQMUgNTgNIwej6yQYA1vBfFqOeRyAAAAAASUVORK5CYII=" alt=""><h3 id="feature2Title">Gereksiz şey yok</h3><p id="feature2Desc">İşi neyse onu yapıyor. Ayarları mümkün olduğunca sade tutuyoruz.</p></article>
@@ -80,6 +80,6 @@
 <div class="modal" id="adminModal"><div class="dialog wide"><div class="dialog-head"><h3>11_ Studios • Admin Panel</h3><button class="close" data-close="adminModal">×</button></div><div class="dialog-body"><div class="notice" id="adminNotice">Pluginler, hesaplar ve site düzenleri buluta kaydedilir. Kaydettiğin değişiklikler tüm cihazlarda görünür.</div><div class="stats"><div class="stat"><b id="statPlugins">0</b><span>Plugin</span></div><div class="stat"><b id="statFree">0</b><span id="statFreeLabel">Ücretsiz</span></div><div class="stat"><b id="statPaid">0</b><span id="statPaidLabel">Premium</span></div></div><div class="admin-layout"><div class="admin-box"><h4 id="formTitle">Yeni plugin ekle</h4><form id="pluginForm"><input type="hidden" id="editId"><div class="form-row"><div class="field"><label id="pNameLabel">Plugin adı</label><input id="pName" placeholder="11_ Plugin" maxlength="60" required></div><div class="field"><label id="pVersionLabel">Sürüm</label><input id="pVersion" placeholder="1.0.0" maxlength="24" required></div></div><div class="form-row"><div class="field"><label id="pCategoryLabel">Kategori</label><select id="pCategory"><option value="utility">Araçlar</option><option value="security">Güvenlik</option><option value="visual">Görsel</option><option value="other">Diğer</option></select></div><div class="field"><label id="pPriceLabel">Fiyat (₺)</label><input id="pPrice" type="number" min="0" step="1" value="0"></div></div><div class="field"><label id="pDescLabel">Açıklama</label><textarea id="pDesc" maxlength="500" placeholder="Plugin ne yapıyor?"></textarea></div><div class="field"><label id="pUrlLabel">İndirme / satış linki</label><input id="pUrl" type="url" maxlength="500" inputmode="url" placeholder="https://github.com/.../releases"></div><div class="field"><label id="pIconLabel">Plugin ikonu</label><input type="hidden" id="pIcon"><div class="icon-picker" id="iconPicker"></div></div><div class="dialog-footer"><button class="btn ghost" type="button" id="cancelEdit" style="display:none">Vazgeç</button><button class="btn purple" id="savePluginBtn" type="submit">Kaydet</button></div></form></div><div class="admin-box"><h4 id="publishedPluginsTitle">Yayındaki pluginler</h4><div class="admin-list" id="adminList"></div></div></div></div></div></div>
 <div class="toast" id="toast"></div>
 <script src="assets/site-app.js?v=20261016-36" defer></script>
-<script src="assets/plugin-browser-v37.js?v=20261016-40" defer></script>
-<script src="assets/editor-runtime-v37.js?v=20261016-40" defer></script>
+<script src="assets/plugin-browser-v37.js?v=20261016-41" defer></script>
+<script src="assets/editor-runtime-v37.js?v=20261016-41" defer></script>
 </body></html>
