@@ -1,4 +1,4 @@
-name: Publish site v33
+name: Publish site v34
 on:
   push:
     paths:
@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build optimized secure site v33
+      - name: Build optimized secure site v34
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          V='20261016-33'
+          V='20261016-34'
 
           base=Path('assets/style-base.css').read_text(encoding='utf-8')
           style=Path('assets/style.css').read_text(encoding='utf-8')
@@ -32,7 +32,20 @@ jobs:
           site_css='\n'.join(css_parts)
           site_css=re.sub(r'/\*.*?\*/','',site_css,flags=re.S)
           site_css=re.sub(r'\n{3,}','\n\n',site_css)
-          site_css += '\n@supports (content-visibility:auto){#about{content-visibility:auto;contain-intrinsic-size:auto 520px}}\n'
+          site_css += '''
+@supports (content-visibility:auto){#about{content-visibility:auto;contain-intrinsic-size:auto 520px}}
+#top .hero-visual .orbit-wrap .hero-portrait{
+  width:500px!important;
+  height:auto!important;
+  image-rendering:auto!important;
+  object-fit:contain!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:none!important;
+  -webkit-mask-image:radial-gradient(ellipse 76% 80% at 50% 48%,#000 62%,rgba(0,0,0,.96) 72%,transparent 100%);
+  mask-image:radial-gradient(ellipse 76% 80% at 50% 48%,#000 62%,rgba(0,0,0,.96) 72%,transparent 100%);
+}
+'''
           Path('assets/site.css').write_text(site_css,encoding='utf-8')
 
           media=Path('assets/app-media.js').read_text(encoding='utf-8')
@@ -69,11 +82,11 @@ jobs:
           s=re.sub(r'<img class="logo"[^>]*>',f'<img class="logo" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" decoding="async" fetchpriority="high">',s,count=1)
           s=re.sub(r'<img class="mark"[^>]*>','',s,count=1)
           s=re.sub(r'<div class="eyebrow" id="heroEyebrow"[^>]*>.*?</div>',f'<div class="eyebrow" id="heroEyebrow" aria-label="11_ Studios"><img class="hero-wordmark-img" src="assets/hero-wordmark.png?v={V}" alt="11_ Studios" data-ready="1" decoding="async"></div>',s,count=1,flags=re.S)
-          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-hq.webp?v={V}" alt="Atatürk" width="576" height="543" decoding="async" fetchpriority="high">',s,count=1)
+          s=re.sub(r'<img class="brand-orbit hero-portrait"[^>]*>',f'<img class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v={V}" alt="Atatürk" width="512" height="512" decoding="async" fetchpriority="high">',s,count=1)
           s=re.sub(r'(<footer class="footer"><div class="container footer-row"><div><img) src="data:image/png;base64,[^"]+"',rf'\1 src="assets/hero-wordmark.png?v={V}" loading="lazy" decoding="async"',s,count=1)
           s=re.sub(r'\n?<style id="remove-ataturk-quote">.*?</style>','',s,count=1,flags=re.S)
 
-          preload=f'<link rel="preload" as="image" href="assets/ataturk-hq.webp?v={V}" type="image/webp" fetchpriority="high">'
+          preload=f'<link rel="preload" as="image" href="assets/ataturk-final.jpg?v={V}" fetchpriority="high">'
           s=re.sub(r'<link rel="preload" as="image" href="assets/ataturk-(?:final\.jpg|transparent\.png|hq\.webp)\?v=[^"]+"(?: type="image/webp")? fetchpriority="high">',preload,s,count=1)
           if 'rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co"' not in s:
             s=s.replace('</title>','</title>\n<link rel="preconnect" href="https://mzrnuiunfxaendnrigzk.supabase.co" crossorigin>\n'+preload,1)
@@ -86,19 +99,19 @@ jobs:
         run: |
           test -s assets/site.css
           test -s assets/site-app.js
-          test -s assets/ataturk-hq.webp
+          test -s assets/ataturk-final.jpg
           node --check assets/site-app.js
-          grep -q 'assets/site.css?v=20261016-33' index.html
-          grep -q 'assets/site-app.js?v=20261016-33' index.html
-          grep -q 'class="brand-orbit hero-portrait" src="assets/ataturk-hq.webp?v=20261016-33"' index.html
-          grep -q 'class="logo" src="assets/hero-wordmark.png?v=20261016-33"' index.html
+          grep -q 'assets/site.css?v=20261016-34' index.html
+          grep -q 'assets/site-app.js?v=20261016-34' index.html
+          grep -q 'class="brand-orbit hero-portrait" src="assets/ataturk-final.jpg?v=20261016-34"' index.html
+          grep -q 'class="logo" src="assets/hero-wordmark.png?v=20261016-34"' index.html
           ! grep -q 'class="mark"' index.html
           ! grep -q 'class="brand-orbit hero-portrait" src="data:image' index.html
-      - name: Commit v33
+      - name: Commit v34
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html assets/site.css assets/site-app.js
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v33 high quality Ataturk portrait'
+          git commit -m 'Publish site v34 restore stable Ataturk portrait'
           git push
