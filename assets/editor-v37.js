@@ -45,7 +45,7 @@
       const win=frame?.contentWindow,doc=frame?.contentDocument;
       if(!win||!doc||win.__11EditorRuntime41)return;
       if(doc.getElementById('editorRuntime41'))return;
-      const s=doc.createElement('script');s.id='editorRuntime41';s.src='assets/editor-runtime-v37.js?v=20261016-41';s.async=false;
+      const s=doc.createElement('script');s.id='editorRuntime41';s.src='assets/editor-runtime-v37.js?v=20261016-43';s.async=false;
       (doc.body||doc.documentElement).appendChild(s);
     }catch(err){console.warn('[11_ Editor] preview runtime inject failed',err);}
   }
@@ -91,7 +91,7 @@
     if(!file||!/^image\/(png|jpeg|webp|gif)$/i.test(file.type))throw new Error('invalid_image');
     if(file.size>8*1024*1024)throw new Error('too_large');
     if(file.type.toLowerCase()==='image/gif'){
-      const data=await fileToDataUrl(file);if(data.length>440000)throw new Error('gif_too_large');return data;
+      const data=await fileToDataUrl(file);return data;
     }
     const original=await fileToDataUrl(file);
     const img=await new Promise((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error('decode_failed'));i.src=original;});
@@ -105,7 +105,7 @@
     try{
       const image=await compressImage(file),item={id:uid(),type:'image',x:36,y:insertionY(),width:24,opacity:1,z:10,image,alt:file.name.slice(0,180)};
       state.elements.push(item);selectedId=item.id;markDirty();renderProperties();sendState();
-    }catch(err){status(err.message==='gif_too_large'?'Animasyonlu GIF yaklaşık 320 KB’dan küçük olmalı.':'Görsel eklenemedi. Dosyayı küçültüp tekrar dene.','bad');}
+    }catch(err){status('Görsel eklenemedi. Dosya 8 MB’dan büyük olmamalı ve desteklenen bir görsel olmalı.','bad');}
   }
   async function loadCloud(){
     status('Buluttaki düzen yükleniyor…');

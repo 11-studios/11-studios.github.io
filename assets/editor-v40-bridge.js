@@ -1,5 +1,5 @@
 (()=>{
-  const VERSION='20261016-42';
+  const VERSION='20261016-43';
   function inject(){
     const frame=document.getElementById('siteFrame');if(!frame)return;
     try{
