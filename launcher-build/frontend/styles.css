@@ -1,0 +1,57 @@
+:root {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #f4f2fa;
+  background: #08080c;
+  user-select: none;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #08080c; }
+button, input { font: inherit; }
+button { border: 0; }
+#app { position: relative; width: 960px; height: 600px; background: #08080c; overflow: hidden; }
+.titlebar { position: absolute; z-index: 30; left: 0; right: 0; top: 0; height: 44px; background: #0a090e; display: flex; align-items: center; }
+.title-icon { width: 32px; height: 32px; object-fit: contain; margin-left: 17px; pointer-events: none; }
+.title-text { margin-left: 9px; font-size: 17px; font-weight: 600; color: #f4f2fa; pointer-events: none; }
+.window-actions { margin-left: auto; height: 44px; display: flex; }
+.window-btn { width: 50px; height: 44px; background: transparent; color: #8e849b; cursor: pointer; font-size: 20px; line-height: 44px; }
+.window-btn:hover { color: #dcc6ff; background: rgba(255,255,255,.025); }
+.window-btn.close:hover { color: #ff7380; background: rgba(255,70,85,.08); }
+.sidebar { position: absolute; left: 0; top: 44px; width: 340px; height: 556px; background: #0e0c15; border-right: 1px solid #2c2540; }
+.studio-logo { position: absolute; left: 54px; top: 48px; width: 232px; height: 218px; object-fit: contain; pointer-events: none; }
+.launcher-name { position: absolute; left: 40px; top: 286px; font-size: 34px; line-height: 42px; font-weight: 700; letter-spacing: -.8px; }
+.launcher-sub { position: absolute; left: 40px; top: 331px; font-size: 18px; color: #b5afc1; }
+.footer-brand { position: absolute; left: 40px; top: 457px; font-size: 18px; color: #cba7ff; }
+.footer-version { position: absolute; left: 40px; top: 487px; font-size: 13px; color: #6b6378; white-space: nowrap; }
+.footer-credit { position: absolute; left: 40px; top: 512px; font-size: 13px; color: #6b6378; }
+.content { position: absolute; left: 340px; top: 44px; width: 620px; height: 556px; }
+.play-logo { position: absolute; left: 85px; top: 42px; width: 430px; height: 94px; object-fit: contain; pointer-events: none; }
+.field-label { position: absolute; left: 80px; top: 170px; font-size: 13px; color: #b5afc1; letter-spacing: .15px; }
+.input-shell { position: absolute; left: 72px; top: 200px; width: 478px; height: 46px; border: 1px solid #302945; background: #14121d; border-radius: 10px; padding: 5px 7px; display: flex; align-items: center; }
+#username { width: 100%; height: 34px; border: 0; outline: 0; background: transparent; color: #f4f2fa; padding: 0; font-size: 18px; user-select: text; }
+#username::placeholder { color: #6f687b; }
+.input-shell:focus-within { border-color: #6f568f; box-shadow: 0 0 0 1px rgba(203,167,255,.05); }
+.hint { position: absolute; left: 80px; top: 248px; font-size: 13px; color: #6b6378; }
+.version-label { top: 270px; }
+.version-wrap { position: absolute; left: 72px; top: 296px; width: 478px; z-index: 20; }
+.version-button { width: 478px; height: 56px; padding: 0 14px; background: #14121d; border: 1px solid #302945; border-radius: 10px; color: #f4f2fa; cursor: pointer; display: flex; align-items: center; text-align: left; }
+.version-button:hover { border-color: #49395f; }
+#versionText { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; }
+.chevron { width: 28px; text-align: center; color: #b5afc1; font-size: 20px; }
+.version-menu { position: absolute; left: 0; top: 58px; width: 478px; max-height: 180px; padding: 5px; overflow-y: auto; background: #0e0c15; border: 1px solid #3a3152; border-radius: 10px; box-shadow: 0 12px 35px rgba(0,0,0,.48); }
+.version-menu.hidden { display: none; }
+.version-item { width: 100%; height: 32px; border-radius: 7px; background: transparent; color: #eee9f7; text-align: left; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; font-size: 13px; }
+.version-item:hover { background: #1f1a2c; }
+.version-item.selected { background: #372a4f; }
+.version-menu::-webkit-scrollbar { width: 8px; }
+.version-menu::-webkit-scrollbar-track { background: transparent; }
+.version-menu::-webkit-scrollbar-thumb { background: #4d3b69; border-radius: 10px; }
+.play-button { position: absolute; left: 80px; top: 381px; width: 462px; height: 60px; border-radius: 13px; background: #cba7ff; color: #0a090e; font-size: 19px; font-weight: 700; cursor: pointer; transition: background .12s, transform .12s; }
+.play-button:hover:not(:disabled) { background: #d8bfff; }
+.play-button:active:not(:disabled) { transform: translateY(1px); }
+.play-button:disabled { background: #605077; cursor: default; }
+.status { position: absolute; left: 80px; top: 449px; width: 462px; height: 22px; color: #9d95ab; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folder-button { position: absolute; left: 80px; top: 461px; width: 210px; height: 30px; padding: 0; color: #9289a0; background: transparent; text-align: left; font-size: 13px; cursor: pointer; }
+.folder-button:hover { color: #dcc6ff; }
+.progress-track { position: absolute; left: 80px; top: 498px; width: 462px; height: 6px; border-radius: 3px; background: #231f2c; overflow: hidden; }
+.progress-bar { width: 0%; height: 100%; border-radius: 3px; background: #cba7ff; transition: width .12s linear; }
