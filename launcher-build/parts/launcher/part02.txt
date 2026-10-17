@@ -1,0 +1,100 @@
+    let _ = fs::remove_file(&fresh);
+    if let Err(err) = download_to(MANIFEST_URL, &fresh, "", 0, false, None) {
+        let _ = fs::remove_file(&fresh);
+        if !cache.exists() { return Err(err); }
+    } else {
+        let _ = fs::remove_file(&cache);
+        fs::rename(&fresh, &cache).map_err(|e| e.to_string())?;
+    }
+    let bytes = fs::read(&cache).map_err(|e| e.to_string())?;
+    serde_json::from_slice(&bytes).map_err(|e| e.to_string())
+}
+
+pub fn fetch_version_meta(v: &ManifestVersion, paths: &LaunchPaths, progress: Option<Progress<'_>>) -> Result<VersionMeta, String> {
+    let meta_path = paths.version_dir.join(format!("{}.json", v.id));
+    if let Some(p) = progress { p("Sürüm bilgileri hazırlanıyor…".into(), 0.08); }
+    if let Err(err) = download_to(&v.url, &meta_path, "", 0, false, None) {
+        if !meta_path.exists() { return Err(err); }
+    }
+    let mut meta: VersionMeta = serde_json::from_slice(&fs::read(&meta_path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    if meta.id.is_empty() { meta.id = v.id.clone(); }
+    if meta.kind.is_empty() { meta.kind = v.kind.clone(); }
+    Ok(meta)
+}
+
+pub fn prepare_minecraft_profile(v: &ManifestVersion, profile_id: &str, username: &str, progress: Option<Progress<'_>>) -> Result<(VersionMeta, LaunchPaths, Vec<String>, String), String> {
+    let paths = make_paths(profile_id)?;
+    let meta = fetch_version_meta(v, &paths, progress)?;
+    prepare_version_meta(&meta, profile_id, username, progress)
+}
+
+pub fn prepare_version_meta(meta: &VersionMeta, profile_id: &str, username: &str, progress: Option<Progress<'_>>) -> Result<(VersionMeta, LaunchPaths, Vec<String>, String), String> {
+    let paths = make_paths(profile_id)?;
+    let client_version_id = if meta.inherits_from.is_empty() { &meta.id } else { &meta.inherits_from };
+    let client_version_dir = paths.versions.join(sanitize_id(client_version_id));
+    fs::create_dir_all(&client_version_dir).map_err(|e| e.to_string())?;
+    let client_jar = client_version_dir.join(format!("{}.jar", client_version_id));
+    if let Some(p) = progress { p("Minecraft istemcisi kontrol ediliyor…".into(), 0.12); }
+    if !file_valid_fast(&client_jar, meta.downloads.client.size) {
+        download_to(&meta.downloads.client.url, &client_jar, &meta.downloads.client.sha1, meta.downloads.client.size, true, None)
+            .map_err(|e| format!("client indirilemedi: {e}"))?;
+    }
+
+    let allowed: Vec<Library> = meta.libraries.iter().filter(|l| rules_allow(&l.rules)).cloned().collect();
+    let native_sig = native_library_signature(&allowed);
+    let native_marker = paths.natives.join(".11_native_cache");
+    let natives_ready = fs::read_to_string(&native_marker).map(|s| s == native_sig).unwrap_or(false);
+    if !natives_ready && paths.natives.exists() { fs::remove_dir_all(&paths.natives).map_err(|e| e.to_string())?; }
+    fs::create_dir_all(&paths.natives).map_err(|e| e.to_string())?;
+
+    let total = allowed.len().max(1);
+    let mut classpath = Vec::with_capacity(total + 1);
+    for (i, lib) in allowed.iter().enumerate() {
+        if let Some(p) = progress {
+            if i % 3 == 0 || i + 1 == allowed.len() {
+                p(format!("Kütüphaneler hazırlanıyor… {}/{}", i+1, allowed.len()), 0.16 + 0.22 * (i+1) as f64 / total as f64);
+            }
+        }
+        if let Some((art, art_path)) = resolve_artifact(lib) {
+            let full = paths.libraries.join(PathBuf::from(art_path.replace('/', &std::path::MAIN_SEPARATOR.to_string())));
+            if !file_valid_fast(&full, art.size) {
+                download_to(&art.url, &full, &art.sha1, art.size, true, None).map_err(|e| format!("library {}: {e}", lib.name))?;
+            }
+            classpath.push(full);
+        }
+        let mut classifier = lib.natives.get("windows").cloned().unwrap_or_default();
+        classifier = classifier.replace("${arch}", "64");
+        if !classifier.is_empty() {
+            if let Some(n0) = lib.downloads.classifiers.get(&classifier) {
+                let mut n = n0.clone();
+                let np = if n.path.is_empty() { maven_path(&lib.name, &classifier) } else { n.path.clone() };
+                let full = paths.libraries.join(PathBuf::from(np.replace('/', &std::path::MAIN_SEPARATOR.to_string())));
+                if n.url.is_empty() { n.url = library_url(lib, &np); }
+                if !file_valid_fast(&full, n.size) {
+                    download_to(&n.url, &full, &n.sha1, n.size, true, None).map_err(|e| format!("native {}: {e}", lib.name))?;
+                }
+                if !natives_ready {
+                    let mut excludes = vec!["META-INF/".to_string()];
+                    if let Some(x) = &lib.extract { excludes.extend(x.exclude.clone()); }
+                    extract_native_jar(&full, &paths.natives, &excludes).map_err(|e| format!("native extract {}: {e}", lib.name))?;
+                }
+            }
+        }
+    }
+    if !natives_ready { let _ = fs::write(&native_marker, native_sig); }
+    classpath.push(client_jar);
+
+    let mut asset_index_name = meta.asset_index.id.clone();
+    if asset_index_name.is_empty() { asset_index_name = meta.assets.clone(); }
+    if asset_index_name.is_empty() { asset_index_name = "legacy".into(); }
+    let indexes = paths.assets.join("indexes"); fs::create_dir_all(&indexes).map_err(|e| e.to_string())?;
+    let asset_index_path = indexes.join(format!("{}.json", asset_index_name));
+    if let Some(p) = progress { p("Asset index hazırlanıyor…".into(), 0.40); }
+    if !meta.asset_index.url.is_empty() && !file_valid_fast(&asset_index_path, meta.asset_index.size) {
+        download_to(&meta.asset_index.url, &asset_index_path, &meta.asset_index.sha1, meta.asset_index.size, true, None)
+            .map_err(|e| format!("asset index: {e}"))?;
+    }
+    if asset_index_path.exists() {
+        let idx: AssetIndex = serde_json::from_slice(&fs::read(&asset_index_path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+        if !idx.objects.is_empty() { prepare_assets(&idx, &asset_index_name, &paths, progress)?; }
+    }
