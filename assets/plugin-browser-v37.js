@@ -82,7 +82,7 @@
     const filters=document.getElementById('filters');
     if(!filters)return;
     filters.className='project-tabs';
-    filters.innerHTML=Object.keys(TYPES).map((type,index)=>`<button type="button" class="project-tab${index===0?' active':''}" data-project-type="${type}">${esc(labelFor(type))}</button>`).join('');
+    filters.innerHTML=Object.keys(TYPES).map(type=>`<button type="button" class="project-tab${type===activeType?' active':''}" data-project-type="${type}">${esc(labelFor(type))}</button>`).join('');
     filters.querySelectorAll('.project-tab').forEach(button=>button.addEventListener('click',()=>{
       activeType=button.dataset.projectType||'utility';
       filters.querySelectorAll('.project-tab').forEach(x=>x.classList.toggle('active',x===button));
@@ -94,12 +94,12 @@
     document.querySelectorAll('.project-tab').forEach(button=>{
       const type=button.dataset.projectType||'other';
       button.textContent=labelFor(type);
+      button.classList.toggle('active',type===activeType);
     });
   }
 
   function projectRows(){
-    let list=[];
-    try{list=Array.isArray(plugins)?plugins.filter(p=>(p?.category||'utility')===activeType):[];}catch{}
+    let list=[];try{list=Array.isArray(plugins)?plugins.filter(p=>(p?.category||'utility')===activeType):[];}catch{}
     return list;
   }
 
@@ -117,8 +117,7 @@
   }
 
   function renderAdminProjectList(){
-    const el=document.getElementById('adminList');
-    if(!el)return;
+    const el=document.getElementById('adminList');if(!el)return;
     let list=[];try{list=Array.isArray(plugins)?plugins:[];}catch{}
     el.innerHTML=list.map(p=>`<div class="admin-item project-admin-item" data-admin-project="${esc(p.id)}">
       <img src="${esc(imageFor(p))}" alt="">
@@ -130,16 +129,13 @@
   }
 
   function renderProjects(){
-    const grid=document.getElementById('pluginGrid');
-    if(!grid)return;
+    const grid=document.getElementById('pluginGrid');if(!grid)return;
     const list=projectRows();
     grid.className='project-list';
     grid.innerHTML=list.length?list.map(rowHtml).join(''):`<div class="project-empty">${isEnglish()?'Nothing has been added here yet.':'Buraya henüz bir proje eklenmemiş.'}</div>`;
     grid.querySelectorAll('.project-row').forEach(row=>row.addEventListener('click',()=>{try{openPlugin(row.dataset.projectId||'');}catch{}}));
-    const badge=document.getElementById('pluginCountBadge');
-    if(badge)badge.textContent=`${list.length} ${isEnglish()?'project':'proje'}`;
-    const title=document.querySelector('#plugins .market-title h3');
-    if(title)title.textContent=labelFor(activeType);
+    const badge=document.getElementById('pluginCountBadge');if(badge)badge.textContent=`${list.length} ${isEnglish()?'project':'proje'}`;
+    const title=document.querySelector('#plugins .market-title h3');if(title)title.textContent=labelFor(activeType);
     try{document.body.classList.toggle('admin-mode',!!session?.admin);}catch{}
     renderAdminProjectList();
     try{if(typeof updateStats==='function')updateStats();}catch{}
@@ -154,10 +150,13 @@
     const categoryLabel=document.getElementById('pCategoryLabel');if(categoryLabel)categoryLabel.textContent=english?'Project type':'Proje türü';
     const nameLabel=document.getElementById('pNameLabel');if(nameLabel)nameLabel.textContent=english?'Project name':'Proje adı';
     const iconLabel=document.getElementById('pIconLabel');if(iconLabel)iconLabel.textContent=english?'Project icon':'Proje ikonu';
+    const imageLabel=document.getElementById('pImageLabel');if(imageLabel)imageLabel.textContent=english?'Project image':'Proje görseli';
+    const fileLabel=document.getElementById('pDownloadFileLabel');if(fileLabel)fileLabel.textContent=english?'Project file':'Proje dosyası';
+    const fileHelp=document.getElementById('pDownloadFileHelp');if(fileHelp)fileHelp.textContent=english?'For free projects, Download gets this file directly.':'Ücretsiz projelerde İndir butonu bu dosyayı doğrudan indirir.';
+    const fileInput=document.getElementById('pDownloadFile');if(fileInput)fileInput.accept='.jar,.zip,.rar,.7z,.tar,.gz,.yml,.yaml,.json,.txt,.exe,.msi,.dmg,.appimage,.deb,.rpm,.apk,application/java-archive,application/zip,application/octet-stream';
     const published=document.getElementById('publishedPluginsTitle');if(published)published.textContent=english?'Published projects':'Yayındaki projeler';
     const descInput=document.getElementById('pDesc');if(descInput)descInput.placeholder=english?'What does the project do?':'Proje ne yapıyor?';
-    const category=document.getElementById('pCategory');
-    if(category)[...category.options].forEach(option=>{option.textContent=labelFor(option.value);});
+    const category=document.getElementById('pCategory');if(category)[...category.options].forEach(option=>{option.textContent=labelFor(option.value);});
     const back=document.getElementById('detailBackText');if(back)back.textContent=english?'Back to projects':'Projelere dön';
     const about=document.getElementById('detailAboutTitle');if(about)about.textContent=english?'About this project':'Proje hakkında';
     const info=document.getElementById('detailInfoTitle');if(info)info.textContent=english?'Project information':'Proje bilgileri';
@@ -176,6 +175,22 @@
     const notice=document.getElementById('adminNotice');if(!notice||notice.dataset.projectObserved==='1')return;
     notice.dataset.projectObserved='1';
     new MutationObserver(()=>queueMicrotask(patchStaticLabels)).observe(notice,{childList:true,characterData:true,subtree:true});
+  }
+
+  async function migrateLegacyCategoriesIfNeeded(){
+    try{
+      const c=window.__11Cloud;if(!c?.url||!c?.anon)return;
+      const response=await fetch(`${c.url}/rest/v1/plugins?select=id&limit=1`,{headers:{apikey:c.anon,Accept:'application/json'},cache:'no-store',credentials:'omit'});
+      if(!response.ok)return;
+      const remote=await response.json();
+      if(!Array.isArray(remote)||remote.length)return;
+      let changed=false;
+      if(Array.isArray(plugins))plugins.forEach(p=>{if(p&&p.category!=='utility'){p.category='utility';changed=true;}});
+      if(changed){
+        try{if(typeof savePlugins==='function')savePlugins();else localStorage.setItem('11_plugins',JSON.stringify(plugins));}catch{}
+        activeType='utility';installTabs();renderProjects();
+      }
+    }catch(err){console.debug('[11_ Studios] legacy project migration skipped',err);}
   }
 
   function install(){
@@ -202,22 +217,18 @@
       }catch{}
 
       document.getElementById('languageSelect')?.addEventListener('change',()=>setTimeout(()=>{
-        patchTranslations();
-        installTabs();
-        renderProjects();
-        patchStaticLabels();
+        patchTranslations();installTabs();renderProjects();patchStaticLabels();
       },0));
       document.addEventListener('11:cloud-synced',()=>setTimeout(renderProjects,0));
       document.addEventListener('11:cloud-admin-ready',()=>setTimeout(patchStaticLabels,0));
       document.addEventListener('11:catalog-changed',()=>setTimeout(renderProjects,0));
 
       try{applyLanguage(document.getElementById('languageSelect')?.value||'tr');}catch{}
-      renderProjects();
-      patchStaticLabels();
+      renderProjects();patchStaticLabels();setTimeout(patchStaticLabels,250);setTimeout(patchStaticLabels,900);
+      setTimeout(migrateLegacyCategoriesIfNeeded,250);
       return true;
     }catch(err){console.error('[11_ Studios] projects catalog failed',err);return false;}
   }
 
-  let tries=0;
-  const timer=setInterval(()=>{tries++;if(install()||tries>160)clearInterval(timer);},50);
+  let tries=0;const timer=setInterval(()=>{tries++;if(install()||tries>160)clearInterval(timer);},50);
 })();
