@@ -1,0 +1,54 @@
+use crate::{java, launcher::*};
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::{collections::{HashMap, HashSet}, fs, io::Read, path::{Path, PathBuf}, process::Command, time::Duration};
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all="camelCase")]
+pub struct LaunchVersion {
+    #[serde(alias="Key")] pub key: String,
+    #[serde(alias="Label")] pub label: String,
+    #[serde(alias="Kind")] pub kind: String,
+    #[serde(alias="BaseID")] pub base_id: String,
+    #[serde(alias="ProfileID")] pub profile_id: String,
+    #[serde(alias="LoaderVersion")] pub loader_version: String,
+    #[serde(alias="OptiFineFile")] pub opti_fine_file: String,
+    #[serde(alias="OptiFineForge")] pub opti_fine_forge: String,
+    #[serde(alias="Vanilla")] pub vanilla: ManifestVersion,
+}
+
+#[derive(Debug, Deserialize)] struct FabricGameVersion { version:String }
+#[derive(Debug, Deserialize)] struct FabricLoaderEntry { loader: FabricLoader }
+#[derive(Debug, Deserialize)] struct FabricLoader { version:String, #[serde(default)] stable:bool }
+#[derive(Debug, Clone, Default)] struct OptiFineInfo { file:String, forge_version:String, display:String }
+
+fn fetch_url_bytes(url:&str, timeout:Duration)->Result<Vec<u8>,String>{
+    let c=reqwest::blocking::Client::builder().user_agent("11_Launcher/2.0 (Rust/Tauri)").timeout(timeout).build().map_err(|e|e.to_string())?;
+    let mut r=c.get(url).send().map_err(|e|e.to_string())?; if !r.status().is_success(){return Err(format!("HTTP {}",r.status().as_u16()));}
+    let mut b=Vec::new(); r.take(16<<20).read_to_end(&mut b).map_err(|e|e.to_string())?; Ok(b)
+}
+
+pub fn fetch_launch_versions(progress:Option<Progress<'_>>)->Result<Vec<LaunchVersion>,String>{
+    let m=fetch_manifest(progress)?; if let Some(p)=progress{p("Fabric, Forge ve OptiFine sürümleri aranıyor…".into(),0.035);}
+    let ids=m.versions.iter().map(|v|v.id.clone()).collect::<Vec<_>>();
+    let fabric=fetch_fabric_games().unwrap_or_default(); let forge=fetch_forge_latest(&ids).unwrap_or_default(); let opti=fetch_optifine_latest().unwrap_or_default();
+    let mut out=Vec::new();
+    for v in m.versions {
+        let mut vanilla_label=v.id.clone(); match v.kind.as_str(){"snapshot"=>vanilla_label.push_str("  • Snapshot"),"old_beta"=>vanilla_label.push_str("  • Beta"),"old_alpha"=>vanilla_label.push_str("  • Alpha"),_=>{}}
+        out.push(LaunchVersion{key:format!("vanilla:{}",v.id),label:format!("Vanilla  •  {vanilla_label}"),kind:"vanilla".into(),base_id:v.id.clone(),profile_id:v.id.clone(),vanilla:v.clone(),..Default::default()});
+        if fabric.contains(&v.id){out.push(LaunchVersion{key:format!("fabric:{}",v.id),label:format!("Fabric   •  {}",v.id),kind:"fabric".into(),base_id:v.id.clone(),profile_id:format!("fabric-{}",v.id),vanilla:v.clone(),..Default::default()});}
+        if let Some(fv)=forge.get(&v.id){let display=fv.strip_prefix(&(v.id.clone()+"-")).unwrap_or(fv);out.push(LaunchVersion{key:format!("forge:{fv}"),label:format!("Forge    •  {}  •  {display}",v.id),kind:"forge".into(),base_id:v.id.clone(),profile_id:format!("{}-forge-{display}",v.id),loader_version:fv.clone(),vanilla:v.clone(),..Default::default()});}
+        if let Some(oi)=opti.get(&v.id){if !oi.forge_version.is_empty(){out.push(LaunchVersion{key:format!("optifine:{}",oi.file),label:format!("OptiFine •  {}  •  {}",v.id,oi.display),kind:"optifine".into(),base_id:v.id.clone(),profile_id:format!("{}-optifine-{}",v.id,sanitize_id(&oi.display)),loader_version:format!("{}-{}",v.id,oi.forge_version),opti_fine_file:oi.file.clone(),opti_fine_forge:oi.forge_version.clone(),vanilla:v.clone()});}}
+    }
+    if let Some(p)=progress{p(format!("{} oyun profili hazır.",out.len()),0.0);} Ok(out)
+}
+
+fn fetch_fabric_games()->Result<HashSet<String>,String>{let b=fetch_url_bytes("https://meta.fabricmc.net/v2/versions/game",Duration::from_secs(25))?;let x:Vec<FabricGameVersion>=serde_json::from_slice(&b).map_err(|e|e.to_string())?;Ok(x.into_iter().map(|x|x.version).collect())}
+
+fn fetch_fabric_profile(base_id:&str)->Result<(VersionMeta,String),String>{
+    let b=fetch_url_bytes(&format!("https://meta.fabricmc.net/v2/versions/loader/{}",urlencoding::encode(base_id)),Duration::from_secs(30))?;
+    let entries:Vec<FabricLoaderEntry>=serde_json::from_slice(&b).map_err(|e|e.to_string())?; let mut loader=String::new();
+    for e in entries{if e.loader.version.is_empty(){continue}if loader.is_empty(){loader=e.loader.version.clone()}if e.loader.stable{loader=e.loader.version;break}}
+    if loader.is_empty(){return Err("uygun Fabric Loader bulunamadı".into())}
+    let pb=fetch_url_bytes(&format!("https://meta.fabricmc.net/v2/versions/loader/{}/{}/profile/json",urlencoding::encode(base_id),urlencoding::encode(&loader)),Duration::from_secs(30))?;
