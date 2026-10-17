@@ -1,0 +1,100 @@
+
+    let mut log_config = PathBuf::new();
+    if !meta.logging.client.file.url.is_empty() {
+        let dir = paths.assets.join("log_configs"); let _ = fs::create_dir_all(&dir);
+        let id = if meta.logging.client.file.id.is_empty() { "client-log.xml" } else { &meta.logging.client.file.id };
+        log_config = dir.join(id);
+        if !file_valid_fast(&log_config, meta.logging.client.file.size) {
+            download_to(&meta.logging.client.file.url, &log_config, &meta.logging.client.file.sha1, meta.logging.client.file.size, true, None)
+                .map_err(|e| format!("log config: {e}"))?;
+        }
+    }
+    if let Some(p) = progress { p("Başlatma komutu hazırlanıyor…".into(), 0.80); }
+    let log_string = log_config.to_string_lossy().to_string();
+    let args = build_game_args(meta, &paths, username, &classpath, &asset_index_name, &log_string);
+    Ok((meta.clone(), paths, args, log_string))
+}
+
+fn resolve_artifact(lib: &Library) -> Option<(DownloadInfo, String)> {
+    if let Some(a0) = &lib.downloads.artifact {
+        let mut a = a0.clone(); let p = if a.path.is_empty() { maven_path(&lib.name, "") } else { a.path.clone() };
+        if a.url.is_empty() { a.url = library_url(lib, &p); }
+        return Some((a,p));
+    }
+    let p = maven_path(&lib.name, ""); if p.is_empty() { return None; }
+    Some((DownloadInfo { path: p.clone(), url: library_url(lib, &p), ..Default::default() }, p))
+}
+
+fn library_url(lib: &Library, path: &str) -> String {
+    let mut base = if lib.url.is_empty() { "https://libraries.minecraft.net/".to_string() } else { lib.url.clone() };
+    if !base.ends_with('/') { base.push('/'); }
+    format!("{}{}", base, path.trim_start_matches('/'))
+}
+
+pub fn maven_path(coord: &str, forced_classifier: &str) -> String {
+    let (coord, ext) = match coord.find('@') { Some(i) => (&coord[..i], &coord[i+1..]), None => (coord, "jar") };
+    let p: Vec<&str> = coord.split(':').collect(); if p.len() < 3 { return String::new(); }
+    let classifier = if !forced_classifier.is_empty() { forced_classifier } else if p.len() > 3 { p[3] } else { "" };
+    let mut file = format!("{}-{}", p[1], p[2]); if !classifier.is_empty() { file.push('-'); file.push_str(classifier); }
+    file.push('.'); file.push_str(ext);
+    format!("{}/{}/{}/{}", p[0].replace('.', "/"), p[1], p[2], file)
+}
+
+pub fn rules_allow(rules: &[Rule]) -> bool {
+    if rules.is_empty() { return true; }
+    let mut allowed = false;
+    for r in rules { if rule_matches(r) { allowed = r.action.eq_ignore_ascii_case("allow"); } }
+    allowed
+}
+
+fn rule_matches(r: &Rule) -> bool {
+    if let Some(os) = &r.os {
+        if !os.name.is_empty() && !os.name.eq_ignore_ascii_case("windows") { return false; }
+        if !os.arch.is_empty() {
+            let a = os.arch.to_ascii_lowercase(); if a != "x86_64" && a != "amd64" && a != "x64" { return false; }
+        }
+    }
+    for wanted in r.features.values() { if *wanted { return false; } }
+    true
+}
+
+fn parse_argument(v: &Value) -> Vec<String> {
+    if let Some(s) = v.as_str() { return vec![s.to_string()]; }
+    let Some(obj) = v.as_object() else { return vec![]; };
+    let rules: Vec<Rule> = obj.get("rules").and_then(|x| serde_json::from_value(x.clone()).ok()).unwrap_or_default();
+    if !rules_allow(&rules) { return vec![]; }
+    match obj.get("value") {
+        Some(Value::String(s)) => vec![s.clone()],
+        Some(Value::Array(a)) => a.iter().filter_map(|x| x.as_str().map(ToString::to_string)).collect(),
+        _ => vec![],
+    }
+}
+
+fn build_game_args(meta: &VersionMeta, paths: &LaunchPaths, username: &str, classpath: &[PathBuf], asset_index_name: &str, log_config: &str) -> Vec<String> {
+    let uuid = offline_uuid(username);
+    let sep = if cfg!(windows) { ";" } else { ":" };
+    let cp = classpath.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>().join(sep);
+    let mut repl = HashMap::<&str,String>::new();
+    repl.insert("${auth_player_name}", username.into()); repl.insert("${version_name}", meta.id.clone());
+    repl.insert("${game_directory}", paths.game_dir.to_string_lossy().into()); repl.insert("${assets_root}", paths.assets.to_string_lossy().into());
+    repl.insert("${game_assets}", paths.assets.join("virtual").join(asset_index_name).to_string_lossy().into()); repl.insert("${assets_index_name}", asset_index_name.into());
+    repl.insert("${auth_uuid}", uuid.clone()); repl.insert("${auth_access_token}", "0".into()); repl.insert("${auth_session}", format!("token:0:{uuid}"));
+    repl.insert("${user_type}", "legacy".into()); repl.insert("${version_type}", meta.kind.clone()); repl.insert("${natives_directory}", paths.natives.to_string_lossy().into());
+    repl.insert("${launcher_name}", "11_Launcher".into()); repl.insert("${launcher_version}", "2.0".into()); repl.insert("${classpath}", cp.clone()); repl.insert("${classpath_separator}", sep.into());
+    repl.insert("${library_directory}", paths.libraries.to_string_lossy().into()); repl.insert("${resolution_width}", "1280".into()); repl.insert("${resolution_height}", "720".into());
+    repl.insert("${user_properties}", "{}".into()); repl.insert("${clientid}", "".into()); repl.insert("${auth_xuid}", "".into());
+    let replace = |mut s: String| { for (k,v) in &repl { s = s.replace(*k, v.as_str()); } s };
+    let mut jvm = vec!["-Xms512M".into(), "-Xmx4096M".into(), "-XX:+UseG1GC".into(), "-XX:+ParallelRefProcEnabled".into(), "-XX:MaxGCPauseMillis=60".into(), "-XX:+DisableExplicitGC".into()];
+    if !meta.arguments.jvm.is_empty() {
+        for raw in &meta.arguments.jvm { for a in parse_argument(raw) { let a = replace(a); if !a.starts_with("-Xmx") && !a.starts_with("-Xms") { jvm.push(a); } } }
+    } else {
+        jvm.push(format!("-Djava.library.path={}", paths.natives.to_string_lossy())); jvm.push("-cp".into()); jvm.push(cp);
+    }
+    if !log_config.is_empty() && !meta.logging.client.argument.is_empty() { jvm.push(meta.logging.client.argument.replace("${path}", log_config)); }
+    let mut game = vec![];
+    if !meta.arguments.game.is_empty() { for raw in &meta.arguments.game { for a in parse_argument(raw) { game.push(replace(a)); } } }
+    else { for a in split_command_line(&meta.minecraft_arguments) { game.push(replace(a)); } }
+    jvm.push(meta.main_class.clone()); jvm.extend(game); jvm
+}
+
+fn split_command_line(s: &str) -> Vec<String> {
