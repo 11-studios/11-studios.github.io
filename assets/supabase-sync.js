@@ -6,11 +6,12 @@
   const TOKEN_KEY='11_cloud_admin_token';
   const SYNCED_KEY='11_cloud_catalog_synced_v2';
   let adminToken=sessionStorage.getItem(TOKEN_KEY)||'';
-  let remoteInitiallyEmpty=false;
   let ready=false;
   let pushing=false;
   let legacyPending=false;
   let pushTimer=0;
+  let retryTimer=0;
+  let retryCount=0;
   let lastRemoteSignature='';
 
   const publicHeaders=()=>({apikey:PUBLISHABLE,'Content-Type':'application/json'});
@@ -18,13 +19,15 @@
 
   async function api(action,payload){
     const r=await fetch(API_URL,{
-      method:'POST',headers:publicHeaders(),body:JSON.stringify({action,...(payload||{})}),cache:'no-store',credentials:'omit'
+      method:'POST',
+      headers:publicHeaders(),
+      body:JSON.stringify({action,...(payload||{})}),
+      cache:'no-store',
+      credentials:'omit'
     });
     const text=await r.text();
     let data=null;try{data=text?JSON.parse(text):null;}catch{data=text;}
-    if(!r.ok){
-      const err=new Error(`${action}:${r.status}`);err.status=r.status;err.payload=data;err.raw=text;throw err;
-    }
+    if(!r.ok){const err=new Error(`${action}:${r.status}`);err.status=r.status;err.payload=data;err.raw=text;throw err;}
     return data;
   }
   const rpc=api;
@@ -66,16 +69,15 @@
   function detectLegacyPending(){
     if(localStorage.getItem(SYNCED_KEY)==='1')return false;
     let stored=null;try{stored=JSON.parse(localStorage.getItem('11_plugins')||'null');}catch{}
-    if(!Array.isArray(stored)||!stored.length)return false;
+    if(!Array.isArray(stored))return false;
     let defaults=[];try{defaults=(typeof DEFAULT_PLUGINS!=='undefined'&&Array.isArray(DEFAULT_PLUGINS))?DEFAULT_PLUGINS:[];}catch{}
-    if(!defaults.length)return true;
+    if(!defaults.length)return stored.length>0;
     return catalogSignature(stored)!==catalogSignature(defaults);
   }
 
   async function fetchRemote(){
-    const r=await fetch(`${SUPABASE_URL}/rest/v1/plugins?select=*&order=sort_order.asc,name.asc`,{
-      headers:{apikey:PUBLISHABLE,Accept:'application/json'},cache:'no-store',credentials:'omit'
-    });
+    const url=`${SUPABASE_URL}/rest/v1/plugins?select=*&order=sort_order.asc,name.asc&_=${Date.now()}`;
+    const r=await fetch(url,{headers:{apikey:PUBLISHABLE,Accept:'application/json','Cache-Control':'no-cache'},cache:'no-store',credentials:'omit'});
     if(!r.ok)throw new Error(`plugins:${r.status}`);
     const data=await r.json();
     return Array.isArray(data)?data.map(mapRemote):[];
@@ -87,24 +89,24 @@
 
   function setPlugins(list){
     try{
-      plugins=list.map(x=>({...x}));
+      plugins=(Array.isArray(list)?list:[]).map(x=>({...x}));
       localStorage.setItem('11_plugins',JSON.stringify(plugins));
       lastRemoteSignature=catalogSignature(plugins);
       markSynced();
       if(typeof renderPlugins==='function')renderPlugins();
       if(typeof renderAdminList==='function')renderAdminList();
       if(typeof updateSessionUI==='function')updateSessionUI();
+      document.dispatchEvent(new CustomEvent('11:cloud-catalog-applied',{detail:{count:plugins.length}}));
     }catch(err){console.error('[11_ Studios] cloud catalog apply failed',err);}
   }
 
   async function loadRemote(options={}){
     try{
       const remote=await fetchRemote();
-      remoteInitiallyEmpty=remote.length===0;
-      if(!remote.length)return false;
-      lastRemoteSignature=catalogSignature(remote);
+      const sig=catalogSignature(remote);
+      lastRemoteSignature=sig;
       if(options.preserveLegacy!==false&&legacyPending&&!adminToken)return true;
-      if(catalogSignature(localPlugins())!==lastRemoteSignature)setPlugins(remote);else markSynced();
+      if(catalogSignature(localPlugins())!==sig)setPlugins(remote);else markSynced();
       return true;
     }catch(err){console.error('[11_ Studios] cloud catalog load failed',err);return false;}
   }
@@ -114,26 +116,36 @@
     try{return !!(await rpc('admin_session_valid',{p_token:adminToken}));}catch{return false;}
   }
 
+  function scheduleRetry(){
+    clearTimeout(retryTimer);
+    if(!adminToken||retryCount>=4)return;
+    retryCount++;
+    retryTimer=setTimeout(()=>pushAll(false),Math.min(12000,1200*Math.pow(2,retryCount-1)));
+  }
+
   async function pushAll(showToast=false){
     if(!adminToken||pushing)return false;
     const list=localPlugins();if(!Array.isArray(list))return false;
     pushing=true;
     try{
       await rpc('replace_plugins',{p_token:adminToken,p_plugins:list});
-      remoteInitiallyEmpty=false;
       lastRemoteSignature=catalogSignature(list);
+      retryCount=0;
+      clearTimeout(retryTimer);
       markSynced();
-      if(showToast&&typeof toast==='function')toast(isEnglish()?'Saved for all devices.':'Plugin listesi tüm cihazlara kaydedildi.');
-      document.dispatchEvent(new CustomEvent('11:cloud-synced'));
+      if(showToast&&typeof toast==='function')toast(isEnglish()?'Saved for all devices.':'Plugin değişiklikleri tüm cihazlara kaydedildi.');
+      document.dispatchEvent(new CustomEvent('11:cloud-synced',{detail:{count:list.length}}));
       return true;
     }catch(err){
       console.error('[11_ Studios] cloud catalog save failed',err);
-      if(showToast&&typeof toast==='function')toast(err?.status===429?(isEnglish()?'Too many requests. Try again shortly.':'Çok fazla işlem yapıldı. Biraz sonra tekrar dene.'):(isEnglish()?'Cloud save failed.':'Buluta kaydetme başarısız.'));
+      markPending();
+      scheduleRetry();
+      if(showToast&&typeof toast==='function')toast(err?.status===429?(isEnglish()?'Too many requests. Try again shortly.':'Çok fazla işlem yapıldı. Biraz sonra tekrar dene.'):(isEnglish()?'Cloud save failed. It will retry automatically.':'Buluta kaydetme başarısız. Otomatik tekrar denenecek.'));
       return false;
     }finally{pushing=false;}
   }
 
-  function schedulePush(showToast=true,delay=180){
+  function schedulePush(showToast=true,delay=80){
     clearTimeout(pushTimer);
     pushTimer=setTimeout(()=>{if(adminToken)pushAll(showToast);},delay);
   }
@@ -147,7 +159,7 @@
   function updateAdminNotice(){
     const el=document.getElementById('adminNotice');if(!el)return;
     if(legacyPending){
-      el.textContent=isEnglish()?'This device contains an older local plugin list that has not been uploaded yet. Log in as admin and it will be synced to every device.':'Bu cihazda henüz buluta aktarılmamış eski plugin listen var. Admin hesabına giriş yaptığında liste tüm cihazlara aktarılacak.';
+      el.textContent=isEnglish()?'There are plugin changes waiting to be synchronized. They will be uploaded automatically.':'Buluta gönderilmeyi bekleyen plugin değişiklikleri var. Otomatik olarak senkronize edilecek.';
     }else{
       el.textContent=isEnglish()?'Plugin changes are stored in the cloud and synchronized across devices.':'Plugin değişiklikleri bulutta saklanır ve tüm cihazlara senkronize edilir.';
     }
@@ -155,26 +167,24 @@
 
   async function reconcileAfterAdminAuth(showToast=true){
     let remote=[];
-    try{remote=await fetchRemote();}catch(err){console.error('[11_ Studios] catalog reconcile failed',err);return false;}
-    remoteInitiallyEmpty=remote.length===0;
+    try{remote=await fetchRemote();}catch(err){console.error('[11_ Studios] catalog reconcile failed',err);if(legacyPending)scheduleRetry();return false;}
+    const local=localPlugins();
+    const localSig=catalogSignature(local),remoteSig=catalogSignature(remote);
+    lastRemoteSignature=remoteSig;
+
     if(legacyPending){
-      if(!remote.length)return pushAll(showToast);
-      const localSig=catalogSignature(localPlugins());
-      const remoteSig=catalogSignature(remote);
       if(localSig===remoteSig){markSynced();return true;}
-      const useLocal=confirm(isEnglish()?'This device has an older unsynced plugin list. Upload it and replace the cloud list?':'Bu cihazda eski ve henüz senkronize edilmemiş plugin listesi var. Buluttaki liste bununla değiştirilsin mi?');
-      if(useLocal)return pushAll(showToast);
-      setPlugins(remote);return true;
+      return pushAll(showToast);
     }
-    if(remote.length){setPlugins(remote);return true;}
+
+    if(localSig!==remoteSig)setPlugins(remote);else markSynced();
     return true;
   }
 
-  async function refreshRemote(){
-    if(pushing||legacyPending||adminToken||document.hidden)return;
+  async function refreshRemote(force=false){
+    if(pushing||legacyPending||(!force&&adminToken)||document.hidden)return;
     try{
       const remote=await fetchRemote();
-      if(!remote.length)return;
       const sig=catalogSignature(remote);
       if(sig!==catalogSignature(localPlugins()))setPlugins(remote);
       else{lastRemoteSignature=sig;markSynced();}
@@ -189,7 +199,8 @@
     getToken:()=>adminToken,
     pushAll,
     loadRemote,
-    refreshRemote,
+    refreshRemote:()=>refreshRemote(true),
+    fetchRemote,
     hasPendingLocalCatalog:()=>legacyPending,
     publicFileUrl:path=>`${SUPABASE_URL}/storage/v1/object/public/plugin-files/${String(path||'').split('/').map(encodeURIComponent).join('/')}`
   };
@@ -236,11 +247,11 @@
       const logout=document.getElementById('logoutBtn');
       if(logout)logout.addEventListener('click',()=>{const old=adminToken;adminToken='';sessionStorage.removeItem(TOKEN_KEY);if(old)rpc('admin_logout',{p_token:old}).catch(()=>{});},true);
 
-      document.addEventListener('11:catalog-changed',()=>{markPending();if(adminToken)schedulePush(true,220);});
+      document.addEventListener('11:catalog-changed',()=>{markPending();if(adminToken)schedulePush(true,80);});
       document.getElementById('languageSelect')?.addEventListener('change',()=>setTimeout(updateAdminNotice,20));
-      window.addEventListener('focus',()=>refreshRemote());
-      document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshRemote();});
-      setInterval(refreshRemote,30000);
+      window.addEventListener('focus',()=>refreshRemote(false));
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshRemote(false);});
+      setInterval(()=>refreshRemote(false),5000);
 
       (async()=>{
         const hadLegacyAdmin=(()=>{try{return !!session?.admin;}catch{return false;}})();
@@ -250,21 +261,18 @@
           if(session?.admin&&!adminToken){session=null;localStorage.removeItem('11_session');updateSessionUI();}
         }catch{}
 
-        if(adminToken){
-          await reconcileAfterAdminAuth(false);
-          return;
-        }
+        if(adminToken){await reconcileAfterAdminAuth(false);return;}
 
-        const hadRemote=await loadRemote({preserveLegacy:true});
-        if(!hadRemote&&legacyPending&&hadLegacyAdmin){
+        const ok=await loadRemote({preserveLegacy:true});
+        if(!ok&&legacyPending&&hadLegacyAdmin){
           updateAdminNotice();
           if(typeof openModal==='function')setTimeout(()=>openModal('loginModal'),250);
           const msg=document.getElementById('loginMsg');
-          if(msg)msg.textContent=isEnglish()?'Log in as admin once to move this device’s old plugin list to the cloud.':'Bu cihazdaki eski plugin listesini buluta aktarmak için admin hesabına bir kez giriş yap.';
+          if(msg)msg.textContent=isEnglish()?'Log in as admin once to synchronize this device’s plugin changes.':'Bu cihazdaki plugin değişikliklerini buluta aktarmak için admin hesabına bir kez giriş yap.';
         }
       })();
     }catch(err){console.error('[11_ Studios] cloud init failed',err);}
   }
 
-  let tries=0;const timer=setInterval(()=>{tries++;patchAfterAppReady();if(ready||tries>200)clearInterval(timer);},100);
+  let tries=0;const timer=setInterval(()=>{tries++;patchAfterAppReady();if(ready||tries>200)clearInterval(timer);},50);
 })();
