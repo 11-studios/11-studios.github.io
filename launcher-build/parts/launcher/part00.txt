@@ -1,0 +1,100 @@
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use sha1::{Digest, Sha1};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fs::{self, File},
+    io::{self, Read, Write},
+    path::{Path, PathBuf},
+    thread,
+    time::Duration,
+};
+use zip::ZipArchive;
+
+pub const MANIFEST_URL: &str = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
+pub type Progress<'a> = &'a dyn Fn(String, f64);
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Manifest {
+    #[serde(default)]
+    pub latest: HashMap<String, String>,
+    #[serde(default)]
+    pub versions: Vec<ManifestVersion>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ManifestVersion {
+    #[serde(default)] pub id: String,
+    #[serde(default, rename = "type")] pub kind: String,
+    #[serde(default)] pub url: String,
+    #[serde(default)] pub time: String,
+    #[serde(default)] pub release_time: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadInfo {
+    #[serde(default)] pub id: String,
+    #[serde(default)] pub path: String,
+    #[serde(default)] pub sha1: String,
+    #[serde(default)] pub size: i64,
+    #[serde(default)] pub url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct RuleOs {
+    #[serde(default)] pub name: String,
+    #[serde(default)] pub version: String,
+    #[serde(default)] pub arch: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Rule {
+    #[serde(default)] pub action: String,
+    #[serde(default)] pub os: Option<RuleOs>,
+    #[serde(default)] pub features: HashMap<String, bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct LibraryDownloads {
+    #[serde(default)] pub artifact: Option<DownloadInfo>,
+    #[serde(default)] pub classifiers: HashMap<String, DownloadInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct LibraryExtract {
+    #[serde(default)] pub exclude: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Library {
+    #[serde(default)] pub name: String,
+    #[serde(default)] pub url: String,
+    #[serde(default)] pub downloads: LibraryDownloads,
+    #[serde(default)] pub natives: HashMap<String, String>,
+    #[serde(default)] pub rules: Vec<Rule>,
+    #[serde(default)] pub extract: Option<LibraryExtract>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct VersionArguments {
+    #[serde(default)] pub game: Vec<Value>,
+    #[serde(default)] pub jvm: Vec<Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct LoggingClient {
+    #[serde(default)] pub argument: String,
+    #[serde(default)] pub file: DownloadInfo,
+    #[serde(default, rename = "type")] pub kind: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct LoggingBlock {
+    #[serde(default)] pub client: LoggingClient,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
