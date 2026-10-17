@@ -10,7 +10,7 @@ fn fetch_forge_latest(ids:&[String])->Result<HashMap<String,String>,String>{
 
 fn fetch_optifine_latest()->Result<HashMap<String,OptiFineInfo>,String>{
     let b=fetch_url_bytes("https://optifine.net/downloads",Duration::from_secs(30))?; let s=String::from_utf8_lossy(&b).to_string();
-    let file_re=Regex::new(r"(?i)adloadx\?f=(OptiFine_[A-Za-z0-9._-]+\.jar)").unwrap(); let tags=Regex::new(r"<[^>]+>").unwrap(); let forge_re=Regex::new(r"(?i)Forge\s*#?\s*([0-9][0-9.]*|N/A)").unwrap(); let mut out=HashMap::new();
+    let file_re=Regex::new(r"(?i)adloadx\?f=(OptiFine_[A-Za-z0-9._-]+\.jar)").unwrap(); let tags=Regex::new(r"<[^>]+>").unwrap(); let forge_re=Regex::new(r"(?i)Forge\s*#?\s*([0-9][0-9.]*|N/A)").unwrap(); let mut out:HashMap<String,OptiFineInfo>=HashMap::new();
     for m in file_re.captures_iter(&s){let file=m[1].to_string();let Some((base,display))=parse_optifine_filename(&file) else{continue};if let Some(cur)=out.get(&base){let stable_cur=!cur.file.to_ascii_lowercase().contains("_pre");let preview_new=file.to_ascii_lowercase().contains("_pre");if stable_cur||preview_new{continue;}}
         let start=m.get(0).unwrap().end();let end=(start+1800).min(s.len());let near=html_escape::decode_html_entities(&tags.replace_all(&s[start..end]," ")).to_string();let forge=forge_re.captures(&near).and_then(|c|c.get(1)).map(|m|m.as_str().trim().to_string()).filter(|x|!x.eq_ignore_ascii_case("N/A")).unwrap_or_default();
         out.insert(base,OptiFineInfo{file,forge_version:forge,display});}
@@ -25,7 +25,7 @@ pub fn merge_version_meta(base:&VersionMeta,child:&VersionMeta)->VersionMeta{
 fn library_key(n:&str)->String{let n=n.split('@').next().unwrap_or(n);let p=n.split(':').collect::<Vec<_>>();if p.len()>=2{format!("{}:{}",p[0],p[1])}else{n.into()}}
 fn merge_libraries(base:&[Library],child:&[Library])->Vec<Library>{let mut out=base.to_vec();let mut idx=HashMap::new();for(i,l)in out.iter().enumerate(){idx.insert(library_key(&l.name),i);}for l in child{let k=library_key(&l.name);if let Some(&i)=idx.get(&k){out[i]=l.clone()}else{idx.insert(k,out.len());out.push(l.clone())}}out}
 
-fn scaled<'a>(progress:Option<Progress<'a>>,from:f64,to:f64)->Option<Box<dyn Fn(String,f64)+'a>>{progress.map(|p|Box::new(move|s,x|p(s,from+(to-from)*x.clamp(0.0,1.0))) as Box<dyn Fn(String,f64)>) }
+fn scaled<'a>(progress:Option<Progress<'a>>,from:f64,to:f64)->Option<Box<dyn Fn(String,f64)+'a>>{progress.map(|p|Box::new(move|s:String,x:f64|p(s,from+(to-from)*x.clamp(0.0,1.0))) as Box<dyn Fn(String,f64)>) }
 
 pub fn prepare_selection(sel:&LaunchVersion,username:&str,progress:Option<Progress<'_>>)->Result<(VersionMeta,LaunchPaths,Vec<String>,String,PathBuf),String>{
     match sel.kind.as_str(){
