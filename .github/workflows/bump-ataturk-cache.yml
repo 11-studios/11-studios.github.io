@@ -1,8 +1,10 @@
-name: Publish site v44
+name: Publish project catalog v52
 on:
   push:
     paths:
       - '.github/workflows/bump-ataturk-cache.yml'
+      - 'assets/plugin-browser-v37.js'
+      - 'assets/plugin-browser-v37.css'
       - 'assets/editor-v37.js'
       - 'assets/editor-v37.css'
       - 'assets/editor-runtime-v37.js'
@@ -15,40 +17,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Pin v44 editor assets
+      - name: Pin catalog v52 and editor assets
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
-          V='20261016-44'
 
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'assets/editor-runtime-v37\.css\?v=[^"\']+', f'assets/editor-runtime-v37.css?v={V}', s)
-          s=re.sub(r'assets/editor-runtime-v37\.js\?v=[^"\']+', f'assets/editor-runtime-v37.js?v={V}', s)
+          s=re.sub(r'assets/plugin-browser-v37\.js\?v=[^"\']+', 'assets/plugin-browser-v37.js?v=20261017-52', s)
+          s=re.sub(r'assets/plugin-browser-v37\.css\?v=[^"\']+', 'assets/plugin-browser-v37.css?v=20261017-52', s)
+          s=s.replace('<button type="button" class="project-tab" data-project-type="security">Plugin paketleri</button>','')
+          s=s.replace('<option value="security">Plugin paketleri</option>','')
+          s=s.replace("Yaptığımız pluginleri, paketleri, launcher'ı ve diğer projeleri burada topluyoruz.","Yaptığımız pluginleri, launcher'ı ve diğer projeleri burada topluyoruz.")
+          s=re.sub(r'assets/editor-runtime-v37\.css\?v=[^"\']+', 'assets/editor-runtime-v37.css?v=20261016-44', s)
+          s=re.sub(r'assets/editor-runtime-v37\.js\?v=[^"\']+', 'assets/editor-runtime-v37.js?v=20261016-44', s)
           p.write_text(s,encoding='utf-8')
 
           e=Path('editor.html')
           x=e.read_text(encoding='utf-8')
-          x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+', f'assets/editor-v37.css?v={V}', x)
-          x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+', f'assets/editor-v37.js?v={V}', x)
-          x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+', f'assets/editor-v40-bridge.js?v={V}', x)
+          x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+', 'assets/editor-v37.css?v=20261016-44', x)
+          x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+', 'assets/editor-v37.js?v=20261016-44', x)
+          x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+', 'assets/editor-v40-bridge.js?v=20261016-44', x)
           x=re.sub(r'editorPreview=1&v=[^"\']+', 'editorPreview=1&v=44', x)
           e.write_text(x,encoding='utf-8')
           PY
-      - name: Verify v44
+      - name: Verify catalog v52
         run: |
+          node --check assets/plugin-browser-v37.js
           node --check assets/editor-v37.js
           node --check assets/editor-runtime-v37.js
           node --check assets/editor-v40-bridge.js
-          grep -q 'editor-v37.js?v=20261016-44' editor.html
-          grep -q 'editorPreview=1&v=44' editor.html
-          grep -q 'editor-runtime-v37.js?v=20261016-44' index.html
+          grep -q 'plugin-browser-v37.js?v=20261017-52' index.html
+          grep -q 'plugin-browser-v37.css?v=20261017-52' index.html
+          ! grep -q 'Plugin paketleri' index.html
       - name: Commit cache refs
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html editor.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish site v44 editor visibility fixes'
+          git commit -m 'Publish project catalog v52 without plugin packs'
           git push
