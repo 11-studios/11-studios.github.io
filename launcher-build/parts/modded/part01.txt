@@ -1,0 +1,54 @@
+    let child:VersionMeta=serde_json::from_slice(&pb).map_err(|e|e.to_string())?; Ok((child,loader))
+}
+
+fn fetch_forge_latest(ids:&[String])->Result<HashMap<String,String>,String>{
+    let b=fetch_url_bytes("https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml",Duration::from_secs(30))?; let s=String::from_utf8_lossy(&b);
+    let re=Regex::new(r"<version>([^<]+)</version>").unwrap(); let set:HashSet<&str>=ids.iter().map(String::as_str).collect(); let mut out=HashMap::new();
+    for c in re.captures_iter(&s){let full=c[1].trim();let mut best="";for (i,ch) in full.char_indices(){if ch=='-' {let cand=&full[..i];if set.contains(cand)&&cand.len()>best.len(){best=cand;}}}if !best.is_empty(){out.insert(best.to_string(),full.to_string());}}
+    Ok(out)
+}
+
+fn fetch_optifine_latest()->Result<HashMap<String,OptiFineInfo>,String>{
+    let b=fetch_url_bytes("https://optifine.net/downloads",Duration::from_secs(30))?; let s=String::from_utf8_lossy(&b).to_string();
+    let file_re=Regex::new(r"(?i)adloadx\?f=(OptiFine_[A-Za-z0-9._-]+\.jar)").unwrap(); let tags=Regex::new(r"<[^>]+>").unwrap(); let forge_re=Regex::new(r"(?i)Forge\s*#?\s*([0-9][0-9.]*|N/A)").unwrap(); let mut out=HashMap::new();
+    for m in file_re.captures_iter(&s){let file=m[1].to_string();let Some((base,display))=parse_optifine_filename(&file) else{continue};if let Some(cur)=out.get(&base){let stable_cur=!cur.file.to_ascii_lowercase().contains("_pre");let preview_new=file.to_ascii_lowercase().contains("_pre");if stable_cur||preview_new{continue;}}
+        let start=m.get(0).unwrap().end();let end=(start+1800).min(s.len());let near=html_escape::decode_html_entities(&tags.replace_all(&s[start..end]," ")).to_string();let forge=forge_re.captures(&near).and_then(|c|c.get(1)).map(|m|m.as_str().trim().to_string()).filter(|x|!x.eq_ignore_ascii_case("N/A")).unwrap_or_default();
+        out.insert(base,OptiFineInfo{file,forge_version:forge,display});}
+    Ok(out)
+}
+fn parse_optifine_filename(file:&str)->Option<(String,String)>{let name=file.strip_prefix("OptiFine_")?.strip_suffix(".jar")?;let i=name.find("_HD_")?;if i==0{return None}Some((name[..i].into(),name[i+1..].replace('_'," ")))}
+
+pub fn merge_version_meta(base:&VersionMeta,child:&VersionMeta)->VersionMeta{
+    let mut out=base.clone();out.inherits_from=base.id.clone();if !child.id.is_empty(){out.id=child.id.clone()}if !child.kind.is_empty(){out.kind=child.kind.clone()}if !child.main_class.is_empty(){out.main_class=child.main_class.clone()}if !child.minecraft_arguments.is_empty(){out.minecraft_arguments=child.minecraft_arguments.clone()}if child.java_version.major_version>0{out.java_version=child.java_version.clone()}if !child.logging.client.file.url.is_empty()||!child.logging.client.argument.is_empty(){out.logging=child.logging.clone()}
+    out.libraries=merge_libraries(&base.libraries,&child.libraries);out.arguments.game.extend(child.arguments.game.clone());out.arguments.jvm.extend(child.arguments.jvm.clone());out
+}
+fn library_key(n:&str)->String{let n=n.split('@').next().unwrap_or(n);let p=n.split(':').collect::<Vec<_>>();if p.len()>=2{format!("{}:{}",p[0],p[1])}else{n.into()}}
+fn merge_libraries(base:&[Library],child:&[Library])->Vec<Library>{let mut out=base.to_vec();let mut idx=HashMap::new();for(i,l)in out.iter().enumerate(){idx.insert(library_key(&l.name),i);}for l in child{let k=library_key(&l.name);if let Some(&i)=idx.get(&k){out[i]=l.clone()}else{idx.insert(k,out.len());out.push(l.clone())}}out}
+
+fn scaled<'a>(progress:Option<Progress<'a>>,from:f64,to:f64)->Option<Box<dyn Fn(String,f64)+'a>>{progress.map(|p|Box::new(move|s,x|p(s,from+(to-from)*x.clamp(0.0,1.0))) as Box<dyn Fn(String,f64)>) }
+
+pub fn prepare_selection(sel:&LaunchVersion,username:&str,progress:Option<Progress<'_>>)->Result<(VersionMeta,LaunchPaths,Vec<String>,String,PathBuf),String>{
+    match sel.kind.as_str(){
+        "vanilla"=>{let sp=scaled(progress,0.02,0.82);let (m,p,a,l)=prepare_minecraft_profile(&sel.vanilla,&sel.profile_id,username,sp.as_deref())?;let jp=scaled(progress,0.82,0.94);let j=java::ensure_java(java::required_java_major(&m),jp.as_deref())?;Ok((m,p,a,l,j))}
+        "fabric"=>{let paths=make_paths(&sel.profile_id)?;let p1=scaled(progress,0.02,0.08);let base=fetch_version_meta(&sel.vanilla,&paths,p1.as_deref())?;if let Some(p)=progress{p("Fabric Loader bilgileri alınıyor…".into(),0.09);}let(mut child,loader)=fetch_fabric_profile(&sel.base_id).map_err(|e|format!("Fabric Loader: {e}"))?;child.id=format!("fabric-loader-{loader}-{}",sel.base_id);child.inherits_from=sel.base_id.clone();let merged=merge_version_meta(&base,&child);let p2=scaled(progress,0.10,0.82);let(m,p,a,l)=prepare_version_meta(&merged,&sel.profile_id,username,p2.as_deref())?;let p3=scaled(progress,0.82,0.94);let j=java::ensure_java(java::required_java_major(&m),p3.as_deref())?;Ok((m,p,a,l,j))}
+        "forge"|"optifine"=>{let p1=scaled(progress,0.02,0.56);let(base,_,_,_)=prepare_minecraft_profile(&sel.vanilla,&sel.base_id,username,p1.as_deref())?;let p2=scaled(progress,0.56,0.65);let j=java::ensure_java(java::required_java_major(&base),p2.as_deref())?;let p3=scaled(progress,0.65,0.76);let profile=ensure_forge_installed(&sel.base_id,&sel.loader_version,&j,p3.as_deref())?;let child=read_local_version_meta(&profile)?;let merged=merge_version_meta(&base,&child);let p4=scaled(progress,0.76,0.92);let(m,p,a,l)=prepare_version_meta(&merged,&sel.profile_id,username,p4.as_deref())?;if sel.kind=="optifine"{if let Some(cb)=progress{cb("OptiFine hazırlanıyor…".into(),0.93)}install_optifine_mod(&sel.opti_fine_file,&p.game_dir).map_err(|e|format!("OptiFine: {e}"))?;}Ok((m,p,a,l,j))}
+        _=>Err("bilinmeyen sürüm türü".into())
+    }
+}
+
+fn ensure_forge_installed(base_id:&str,full:&str,java_exe:&Path,progress:Option<Progress<'_>>)->Result<String,String>{
+    if full.is_empty(){return Err("Forge sürümü bulunamadı".into())}let only=full.strip_prefix(&(base_id.to_string()+"-")).unwrap_or(full);let expected=format!("{base_id}-forge-{only}");let json=base_data_dir().join("versions").join(&expected).join(format!("{expected}.json"));if json.exists(){return Ok(expected)}
+    let installers=base_data_dir().join("installers").join("forge");fs::create_dir_all(&installers).map_err(|e|e.to_string())?;let installer=installers.join(format!("forge-{}-installer.jar",sanitize_id(full)));let dl=format!("https://maven.minecraftforge.net/net/minecraftforge/forge/{full}/forge-{full}-installer.jar");if let Some(p)=progress{p("Forge yükleyicisi indiriliyor…".into(),0.10)}download_to(&dl,&installer,"",0,false,None).map_err(|e|format!("Forge installer indirilemedi: {e}"))?;
+    let profiles=base_data_dir().join("launcher_profiles.json");if !profiles.exists(){let _=fs::write(&profiles,"{\"profiles\":{},\"settings\":{}}");}if let Some(p)=progress{p("Forge kuruluyor…".into(),0.45)}
+    let console=java::java_console_path(java_exe);let mut cmd=Command::new(console);cmd.arg("-jar").arg(&installer).arg("--installClient").arg(base_data_dir()).current_dir(base_data_dir());hide_console(&mut cmd);let out=cmd.output().map_err(|e|e.to_string())?;let _=fs::create_dir_all(base_data_dir().join("logs"));let mut log=out.stdout;log.extend_from_slice(&out.stderr);let _=fs::write(base_data_dir().join("logs").join(format!("forge-installer-{}.log",sanitize_id(full))),log);if !out.status.success(){return Err(format!("Forge kurulamadı: {}",out.status))}if json.exists(){return Ok(expected)}
+    let versions=base_data_dir().join("versions");if let Ok(rd)=fs::read_dir(&versions){for e in rd.flatten(){if e.file_type().map(|x|x.is_dir()).unwrap_or(false){let n=e.file_name().to_string_lossy().to_string();if n.contains(&format!("forge-{only}"))&&versions.join(&n).join(format!("{n}.json")).exists(){return Ok(n)}}}}
+    Err("Forge kuruldu ancak sürüm profili bulunamadı".into())
+}
+
+fn read_local_version_meta(id:&str)->Result<VersionMeta,String>{let p=base_data_dir().join("versions").join(sanitize_id(id)).join(format!("{id}.json"));let mut m:VersionMeta=serde_json::from_slice(&fs::read(p).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?;if m.id.is_empty(){m.id=id.into()}Ok(m)}
+
+fn install_optifine_mod(file:&str,game_dir:&Path)->Result<(),String>{if file.is_empty(){return Err("OptiFine dosyası bulunamadı".into())}let mods=game_dir.join("mods");fs::create_dir_all(&mods).map_err(|e|e.to_string())?;let dst=mods.join(file);if is_jar(&dst){return Ok(())}let page=String::from_utf8_lossy(&fetch_url_bytes(&format!("https://optifine.net/adloadx?f={}",urlencoding::encode(file)),Duration::from_secs(30))?).to_string();let re=Regex::new(&format!(r#"(?i)href=[\"']([^\"']*downloadx\?f={}(?:&amp;|&)x=[^\"']+)[\"']"#,regex::escape(file))).map_err(|e|e.to_string())?;let c=re.captures(&page).ok_or("OptiFine indirme bağlantısı alınamadı")?;let mut direct=html_escape::decode_html_entities(&c[1]).to_string();if direct.starts_with('/') {direct=format!("https://optifine.net{direct}")}else if !direct.to_ascii_lowercase().starts_with("http"){direct=format!("https://optifine.net/{}",direct.trim_start_matches('/'))}download_to(&direct,&dst,"",0,false,None)?;if !is_jar(&dst){let _=fs::remove_file(&dst);return Err("indirilen OptiFine dosyası geçerli bir JAR değil".into())}Ok(())}
+fn is_jar(p:&Path)->bool{let Ok(mut f)=fs::File::open(p)else{return false};let mut h=[0u8;2];f.read_exact(&mut h).is_ok()&&h==*b"PK"}
+
+#[cfg(windows)] fn hide_console(cmd:&mut Command){use std::os::windows::process::CommandExt;cmd.creation_flags(0x08000000);}
+#[cfg(not(windows))] fn hide_console(_cmd:&mut Command){}
