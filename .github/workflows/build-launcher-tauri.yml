@@ -30,13 +30,24 @@ jobs:
           $text = ($parts | ForEach-Object { Get-Content $_.FullName -Raw }) -join ''
           [System.IO.File]::WriteAllText("launcher-build/src-tauri/src/modded.rs", $text, $enc)
 
-      - name: Restore launcher images
+      - name: Restore launcher images and Windows icon
         run: |
           New-Item -ItemType Directory -Force launcher-build/frontend/assets | Out-Null
+          New-Item -ItemType Directory -Force launcher-build/src-tauri/icons | Out-Null
           Invoke-WebRequest "https://raw.githubusercontent.com/11-studios/11-studios.github.io/main/assets/site-icon.png" -OutFile "launcher-build/frontend/assets/11_title_icon.png"
           Invoke-WebRequest "https://raw.githubusercontent.com/11-studios/11-studios.github.io/main/assets/logo-v7.png" -OutFile "launcher-build/frontend/assets/11_studio_logo.png"
           Invoke-WebRequest "https://raw.githubusercontent.com/11-studios/11-studios.github.io/main/assets/hero-wordmark.png" -OutFile "launcher-build/frontend/assets/11_play_logo.png"
           Copy-Item "launcher-build/frontend/assets/11_play_logo.png" "launcher-build/frontend/assets/11_wordmark.png"
+
+          Add-Type -AssemblyName System.Drawing.Common
+          $bmp = [System.Drawing.Bitmap]::FromFile((Resolve-Path "launcher-build/frontend/assets/11_title_icon.png"))
+          $hIcon = $bmp.GetHicon()
+          $icon = [System.Drawing.Icon]::FromHandle($hIcon)
+          $stream = [System.IO.File]::Create((Join-Path (Resolve-Path "launcher-build/src-tauri/icons") "icon.ico"))
+          $icon.Save($stream)
+          $stream.Dispose()
+          $icon.Dispose()
+          $bmp.Dispose()
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
