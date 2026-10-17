@@ -1,7 +1,6 @@
 (()=>{
   const TYPES={
     utility:{tr:'Pluginler',en:'Plugins'},
-    security:{tr:'Plugin paketleri',en:'Plugin packs'},
     visual:{tr:'Launcher',en:'Launcher'},
     other:{tr:'Diğer projeler',en:'Other projects'}
   };
@@ -9,7 +8,8 @@
   let installed=false;
 
   const isEnglish=()=>document.getElementById('languageSelect')?.value==='en';
-  const labelFor=type=>TYPES[type]?.[isEnglish()?'en':'tr']||(isEnglish()?'Other projects':'Diğer projeler');
+  const normalizeType=type=>type==='security'?'utility':(TYPES[type]?type:'other');
+  const labelFor=type=>TYPES[normalizeType(type)]?.[isEnglish()?'en':'tr']||(isEnglish()?'Other projects':'Diğer projeler');
   const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   const money=value=>Number(value)>0?`${Number(value).toLocaleString(isEnglish()?'en-US':'tr-TR')} ₺`:(isEnglish()?'Free':'Ücretsiz');
   const imageFor=p=>{
@@ -23,12 +23,12 @@
       I18N.tr.navPlugins='Projelerimiz';
       I18N.tr.heroBrowse='Projelere bak';
       I18N.tr.heroTitle='Bi kaç proje var istersen bak.';
-      I18N.tr.heroDesc='Yaptığımız pluginleri, paketleri, launcher\'ı ve diğer projeleri burada topluyoruz.';
+      I18N.tr.heroDesc='Yaptığımız pluginleri, launcher\'ı ve diğer projeleri burada topluyoruz.';
       I18N.tr.storeKicker='11_ Studios';
       I18N.tr.storeTitle='Projelerimiz';
       I18N.tr.storeDesc='';
       I18N.tr.utility='Pluginler';
-      I18N.tr.security='Plugin paketleri';
+      I18N.tr.security='Pluginler';
       I18N.tr.visual='Launcher';
       I18N.tr.other='Diğer projeler';
       I18N.tr.newPlugin='Yeni proje ekle';
@@ -51,12 +51,12 @@
       I18N.en.navPlugins='Projects';
       I18N.en.heroBrowse='View projects';
       I18N.en.heroTitle='A few projects here, take a look.';
-      I18N.en.heroDesc='Our plugins, packs, launcher and other projects are collected here.';
+      I18N.en.heroDesc='Our plugins, launcher and other projects are collected here.';
       I18N.en.storeKicker='11_ Studios';
       I18N.en.storeTitle='Our Projects';
       I18N.en.storeDesc='';
       I18N.en.utility='Plugins';
-      I18N.en.security='Plugin packs';
+      I18N.en.security='Plugins';
       I18N.en.visual='Launcher';
       I18N.en.other='Other projects';
       I18N.en.newPlugin='Add new project';
@@ -81,6 +81,7 @@
   function installTabs(){
     const filters=document.getElementById('filters');
     if(!filters)return;
+    if(!TYPES[activeType])activeType='utility';
     filters.className='project-tabs';
     filters.innerHTML=Object.keys(TYPES).map(type=>`<button type="button" class="project-tab${type===activeType?' active':''}" data-project-type="${type}">${esc(labelFor(type))}</button>`).join('');
     filters.querySelectorAll('.project-tab').forEach(button=>button.addEventListener('click',()=>{
@@ -99,7 +100,7 @@
   }
 
   function projectRows(){
-    let list=[];try{list=Array.isArray(plugins)?plugins.filter(p=>(p?.category||'utility')===activeType):[];}catch{}
+    let list=[];try{list=Array.isArray(plugins)?plugins.filter(p=>normalizeType(p?.category||'utility')===activeType):[];}catch{}
     return list;
   }
 
@@ -145,6 +146,7 @@
   function patchStaticLabels(){
     const english=isEnglish();
     const storeTitle=document.getElementById('storeTitle');if(storeTitle)storeTitle.textContent=english?'Our Projects':'Projelerimiz';
+    const heroDesc=document.getElementById('heroDesc');if(heroDesc)heroDesc.textContent=english?'Our plugins, launcher and other projects are collected here.':'Yaptığımız pluginleri, launcher\'ı ve diğer projeleri burada topluyoruz.';
     const desc=document.getElementById('storeDesc');if(desc){desc.textContent='';desc.hidden=true;}
     const firstStat=document.querySelector('#adminModal .stats .stat:first-child span');if(firstStat)firstStat.textContent=english?'Projects':'Proje';
     const categoryLabel=document.getElementById('pCategoryLabel');if(categoryLabel)categoryLabel.textContent=english?'Project type':'Proje türü';
@@ -156,7 +158,13 @@
     const fileInput=document.getElementById('pDownloadFile');if(fileInput)fileInput.accept='.jar,.zip,.rar,.7z,.tar,.gz,.yml,.yaml,.json,.txt,.exe,.msi,.dmg,.appimage,.deb,.rpm,.apk,application/java-archive,application/zip,application/octet-stream';
     const published=document.getElementById('publishedPluginsTitle');if(published)published.textContent=english?'Published projects':'Yayındaki projeler';
     const descInput=document.getElementById('pDesc');if(descInput)descInput.placeholder=english?'What does the project do?':'Proje ne yapıyor?';
-    const category=document.getElementById('pCategory');if(category)[...category.options].forEach(option=>{option.textContent=labelFor(option.value);});
+    const category=document.getElementById('pCategory');
+    if(category){
+      [...category.options].forEach(option=>{if(option.value==='security')option.remove();});
+      [...category.options].forEach(option=>{option.textContent=labelFor(option.value);});
+      if(category.value==='security'||!TYPES[category.value])category.value='utility';
+    }
+    document.querySelectorAll('.project-tab[data-project-type="security"]').forEach(x=>x.remove());
     const back=document.getElementById('detailBackText');if(back)back.textContent=english?'Back to projects':'Projelere dön';
     const about=document.getElementById('detailAboutTitle');if(about)about.textContent=english?'About this project':'Proje hakkında';
     const info=document.getElementById('detailInfoTitle');if(info)info.textContent=english?'Project information':'Proje bilgileri';
@@ -177,20 +185,17 @@
     new MutationObserver(()=>queueMicrotask(patchStaticLabels)).observe(notice,{childList:true,characterData:true,subtree:true});
   }
 
-  async function migrateLegacyCategoriesIfNeeded(){
+  function migrateRemovedPackCategory(){
     try{
-      const c=window.__11Cloud;if(!c?.url||!c?.anon)return;
-      const response=await fetch(`${c.url}/rest/v1/plugins?select=id&limit=1`,{headers:{apikey:c.anon,Accept:'application/json'},cache:'no-store',credentials:'omit'});
-      if(!response.ok)return;
-      const remote=await response.json();
-      if(!Array.isArray(remote)||remote.length)return;
       let changed=false;
-      if(Array.isArray(plugins))plugins.forEach(p=>{if(p&&p.category!=='utility'){p.category='utility';changed=true;}});
+      if(Array.isArray(plugins))plugins.forEach(p=>{if(p&&p.category==='security'){p.category='utility';changed=true;}});
       if(changed){
         try{if(typeof savePlugins==='function')savePlugins();else localStorage.setItem('11_plugins',JSON.stringify(plugins));}catch{}
-        activeType='utility';installTabs();renderProjects();
+        activeType='utility';
+        installTabs();
+        renderProjects();
       }
-    }catch(err){console.debug('[11_ Studios] legacy project migration skipped',err);}
+    }catch(err){console.debug('[11_ Studios] removed category migration skipped',err);}
   }
 
   function install(){
@@ -199,6 +204,7 @@
       if(typeof plugins==='undefined'||typeof renderPlugins!=='function'||typeof openPlugin!=='function')return false;
       installed=true;
       patchTranslations();
+      migrateRemovedPackCategory();
       installTabs();
       installNoticeObserver();
 
@@ -216,16 +222,27 @@
         window.renderPluginDetail=renderPluginDetail;
       }catch{}
 
+      try{
+        const baseEdit=editPlugin;
+        editPlugin=function(id){
+          const p=plugins.find(x=>x.id===id);
+          if(p?.category==='security')p.category='utility';
+          const result=baseEdit(id);
+          setTimeout(patchStaticLabels,0);
+          return result;
+        };
+        window.editPlugin=editPlugin;
+      }catch{}
+
       document.getElementById('languageSelect')?.addEventListener('change',()=>setTimeout(()=>{
         patchTranslations();installTabs();renderProjects();patchStaticLabels();
       },0));
-      document.addEventListener('11:cloud-synced',()=>setTimeout(renderProjects,0));
+      document.addEventListener('11:cloud-synced',()=>setTimeout(()=>{migrateRemovedPackCategory();renderProjects();},0));
       document.addEventListener('11:cloud-admin-ready',()=>setTimeout(patchStaticLabels,0));
       document.addEventListener('11:catalog-changed',()=>setTimeout(renderProjects,0));
 
       try{applyLanguage(document.getElementById('languageSelect')?.value||'tr');}catch{}
       renderProjects();patchStaticLabels();setTimeout(patchStaticLabels,250);setTimeout(patchStaticLabels,900);
-      setTimeout(migrateLegacyCategoriesIfNeeded,250);
       return true;
     }catch(err){console.error('[11_ Studios] projects catalog failed',err);return false;}
   }
