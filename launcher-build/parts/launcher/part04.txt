@@ -1,0 +1,73 @@
+    let mut out=vec![]; let mut b=String::new(); let mut quote: Option<char>=None; let mut esc=false;
+    for c in s.chars() {
+        if esc { b.push(c); esc=false; continue; }
+        if quote.is_some() && c=='\\' { esc=true; continue; }
+        if let Some(q)=quote { if c==q { quote=None; } else { b.push(c); } continue; }
+        if c=='\'' || c=='"' { quote=Some(c); continue; }
+        if c.is_whitespace() { if !b.is_empty() { out.push(std::mem::take(&mut b)); } } else { b.push(c); }
+    }
+    if !b.is_empty() { out.push(b); } out
+}
+
+fn offline_uuid(name: &str) -> String {
+    let mut b = md5::compute(format!("OfflinePlayer:{name}")).0;
+    b[6] = (b[6] & 0x0f) | 0x30; b[8] = (b[8] & 0x3f) | 0x80;
+    b.iter().map(|x| format!("{x:02x}")).collect()
+}
+
+fn native_library_signature(libs: &[Library]) -> String {
+    let mut s=String::new();
+    for l in libs {
+        let c=l.natives.get("windows").cloned().unwrap_or_default().replace("${arch}","64"); if c.is_empty(){continue;}
+        s.push_str(&l.name);s.push('|');s.push_str(&c);
+        if let Some(n)=l.downloads.classifiers.get(&c){s.push('|');s.push_str(&n.sha1);s.push('|');s.push_str(&n.size.to_string());}
+        s.push('\n');
+    }
+    let mut h=Sha1::new();h.update(s.as_bytes());format!("{:x}",h.finalize())
+}
+
+fn extract_native_jar(jar: &Path, dst: &Path, excludes: &[String]) -> Result<(), String> {
+    let f=File::open(jar).map_err(|e|e.to_string())?; let mut z=ZipArchive::new(f).map_err(|e|e.to_string())?;
+    for i in 0..z.len(){ let mut entry=z.by_index(i).map_err(|e|e.to_string())?; let name=entry.name().replace('\\',"/");
+        if entry.is_dir() || excludes.iter().any(|x|name.starts_with(&x.replace('\\',"/"))){continue;}
+        let enclosed=entry.enclosed_name().ok_or_else(||"zip-slip engellendi".to_string())?.to_path_buf(); let target=dst.join(enclosed);
+        if let Some(p)=target.parent(){fs::create_dir_all(p).map_err(|e|e.to_string())?;} let mut out=File::create(target).map_err(|e|e.to_string())?;
+        io::copy(&mut entry,&mut out).map_err(|e|e.to_string())?;
+    } Ok(())
+}
+
+fn link_or_copy(src:&Path,dst:&Path)->Result<(),String>{ if let Some(p)=dst.parent(){fs::create_dir_all(p).map_err(|e|e.to_string())?;} if dst.metadata().map(|m|m.len()>0).unwrap_or(false){return Ok(());} let _=fs::remove_file(dst); if fs::hard_link(src,dst).is_ok(){return Ok(());} fs::copy(src,dst).map(|_|()).map_err(|e|e.to_string()) }
+
+fn prepare_assets(idx:&AssetIndex,name:&str,paths:&LaunchPaths,progress:Option<Progress<'_>>)->Result<(),String>{
+    let total=idx.objects.len().max(1); let mut n=0usize;
+    if let Some(p)=progress{p(format!("Oyun dosyaları hazırlanıyor… 0/{}",idx.objects.len()),0.42);}
+    for (asset,obj) in &idx.objects { n+=1; if obj.hash.len()<2{continue;} let object=paths.assets.join("objects").join(&obj.hash[..2]).join(&obj.hash);
+        if !file_valid_fast(&object,obj.size){ let u=format!("https://resources.download.minecraft.net/{}/{}",&obj.hash[..2],obj.hash); download_to(&u,&object,&obj.hash,obj.size,true,None).map_err(|e|format!("asset {asset}: {e}"))?; }
+        if idx.virtual_ { link_or_copy(&object,&paths.assets.join("virtual").join(name).join(asset.replace('/',&std::path::MAIN_SEPARATOR.to_string())))?; }
+        if idx.map_to_resources || name=="legacy" { link_or_copy(&object,&paths.game_dir.join("resources").join(asset.replace('/',&std::path::MAIN_SEPARATOR.to_string())))?; }
+        if let Some(p)=progress { if n%25==0 || n==idx.objects.len(){ p(format!("Oyun dosyaları hazırlanıyor… {n}/{}",idx.objects.len()),0.42+0.34*n as f64/total as f64); } }
+    } Ok(())
+}
+
+pub fn file_valid_fast(path:&Path,size:i64)->bool{path.metadata().map(|m|m.is_file()&&m.len()>0&&(size<=0||m.len()==size as u64)).unwrap_or(false)}
+
+pub fn download_to(url:&str,path:&Path,sha:&str,size:i64,verify:bool,on_bytes:Option<&dyn Fn(i64,i64)>)->Result<(),String>{
+    if url.is_empty(){return Err("boş indirme adresi".into());} if file_valid(path,sha,size,verify){return Ok(());} let mut last=String::new();
+    for attempt in 1..=3 { match download_once(url,path,sha,size,verify,on_bytes){Ok(())=>return Ok(()),Err(e)=>last=e} let _=fs::remove_file(part_path(path)); if attempt<3{thread::sleep(Duration::from_millis(attempt*450));} }
+    Err(last)
+}
+
+fn part_path(path:&Path)->PathBuf{PathBuf::from(format!("{}.part",path.to_string_lossy()))}
+fn download_once(url:&str,path:&Path,sha:&str,size:i64,verify:bool,on_bytes:Option<&dyn Fn(i64,i64)>)->Result<(),String>{
+    if let Some(p)=path.parent(){fs::create_dir_all(p).map_err(|e|e.to_string())?;} let c=client()?; let mut r=c.get(url).send().map_err(|e|e.to_string())?; if !r.status().is_success(){return Err(format!("HTTP {}",r.status().as_u16()));}
+    let total=r.content_length().unwrap_or(0) as i64; let tmp=part_path(path); let mut out=File::create(&tmp).map_err(|e|e.to_string())?; let mut buf=[0u8;131072]; let mut written=0i64;
+    loop{let n=r.read(&mut buf).map_err(|e|e.to_string())?;if n==0{break;}out.write_all(&buf[..n]).map_err(|e|e.to_string())?;written+=n as i64;if let Some(cb)=on_bytes{cb(written,total);}}
+    out.flush().map_err(|e|e.to_string())?; if size>0&&written!=size{let _=fs::remove_file(&tmp);return Err(format!("boyut uyuşmuyor ({written}/{size})"));}
+    if verify&&!sha.is_empty()&&!sha1_matches(&tmp,sha)?{let _=fs::remove_file(&tmp);return Err("SHA1 doğrulaması başarısız".into());}
+    let _=fs::remove_file(path);fs::rename(tmp,path).map_err(|e|e.to_string())
+}
+
+fn file_valid(path:&Path,sha:&str,size:i64,verify:bool)->bool{let Ok(m)=path.metadata()else{return false};if !m.is_file()||m.len()==0{return false}if size>0&&m.len()!=size as u64{return false}if verify&&!sha.is_empty(){return sha1_matches(path,sha).unwrap_or(false)}true}
+fn sha1_matches(path:&Path,expected:&str)->Result<bool,String>{let mut f=File::open(path).map_err(|e|e.to_string())?;let mut h=Sha1::new();let mut b=[0u8;131072];loop{let n=f.read(&mut b).map_err(|e|e.to_string())?;if n==0{break}h.update(&b[..n]);}Ok(format!("{:x}",h.finalize()).eq_ignore_ascii_case(expected))}
+
+pub fn valid_username(s:&str)->bool{Regex::new(r"^[A-Za-z0-9_]{3,16}$").unwrap().is_match(s)}
