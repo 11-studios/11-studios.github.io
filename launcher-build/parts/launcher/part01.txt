@@ -1,0 +1,100 @@
+pub struct DownloadBlock {
+    #[serde(default)] pub client: DownloadInfo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct JavaVersion {
+    #[serde(default)] pub component: String,
+    #[serde(default)] pub major_version: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct VersionMeta {
+    #[serde(default)] pub id: String,
+    #[serde(default)] pub inherits_from: String,
+    #[serde(default, rename = "type")] pub kind: String,
+    #[serde(default)] pub main_class: String,
+    #[serde(default)] pub minecraft_arguments: String,
+    #[serde(default)] pub assets: String,
+    #[serde(default)] pub asset_index: DownloadInfo,
+    #[serde(default)] pub libraries: Vec<Library>,
+    #[serde(default)] pub arguments: VersionArguments,
+    #[serde(default)] pub downloads: DownloadBlock,
+    #[serde(default)] pub java_version: JavaVersion,
+    #[serde(default)] pub logging: LoggingBlock,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AssetObject {
+    #[serde(default)] pub hash: String,
+    #[serde(default)] pub size: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AssetIndex {
+    #[serde(default, rename = "virtual")] pub virtual_: bool,
+    #[serde(default)] pub map_to_resources: bool,
+    #[serde(default)] pub objects: BTreeMap<String, AssetObject>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LaunchPaths {
+    pub base: PathBuf,
+    pub assets: PathBuf,
+    pub libraries: PathBuf,
+    pub versions: PathBuf,
+    pub runtimes: PathBuf,
+    pub logs: PathBuf,
+    pub version_dir: PathBuf,
+    pub game_dir: PathBuf,
+    pub natives: PathBuf,
+}
+
+fn client() -> Result<reqwest::blocking::Client, String> {
+    reqwest::blocking::Client::builder()
+        .user_agent("11_Launcher/2.0 (Rust/Tauri)")
+        .connect_timeout(Duration::from_secs(15))
+        .timeout(Duration::from_secs(600))
+        .redirect(reqwest::redirect::Policy::limited(10))
+        .build()
+        .map_err(|e| e.to_string())
+}
+
+pub fn base_data_dir() -> PathBuf {
+    if let Ok(app) = std::env::var("APPDATA") {
+        if !app.is_empty() { return PathBuf::from(app).join("11_Launcher"); }
+    }
+    dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("11_Launcher")
+}
+
+pub fn ensure_minecraft_layout(base: &Path) -> Result<(), String> {
+    let dirs = ["assets","libraries","logs","versions","saves","resourcepacks","screenshots","server-resource-packs","crash-reports","mods","config","shaderpacks","texturepacks","resources","runtimes"];
+    fs::create_dir_all(base).map_err(|e| e.to_string())?;
+    for d in dirs { fs::create_dir_all(base.join(d)).map_err(|e| e.to_string())?; }
+    Ok(())
+}
+
+pub fn sanitize_id(s: &str) -> String {
+    s.chars().map(|c| match c { '/'|'\\'|':'|'*'|'?'|'"'|'<'|'>'|'|' => '_', _ => c }).collect()
+}
+
+pub fn make_paths(version: &str) -> Result<LaunchPaths, String> {
+    let base = base_data_dir();
+    ensure_minecraft_layout(&base)?;
+    let version_dir = base.join("versions").join(sanitize_id(version));
+    let natives = version_dir.join("natives");
+    fs::create_dir_all(&version_dir).map_err(|e| e.to_string())?;
+    fs::create_dir_all(&natives).map_err(|e| e.to_string())?;
+    Ok(LaunchPaths {
+        assets: base.join("assets"), libraries: base.join("libraries"), versions: base.join("versions"),
+        runtimes: base.join("runtimes"), logs: base.join("logs"), version_dir, game_dir: base.clone(), natives, base
+    })
+}
+
+pub fn fetch_manifest(progress: Option<Progress<'_>>) -> Result<Manifest, String> {
+    let base = base_data_dir(); fs::create_dir_all(&base).map_err(|e| e.to_string())?;
+    let cache = base.join("version_manifest_v2.json");
+    if let Some(p) = progress { p("Sürüm listesi alınıyor…".into(), 0.02); }
+    let fresh = cache.with_extension("json.fresh");
