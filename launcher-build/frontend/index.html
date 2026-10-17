@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>11_Launcher</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="titlebar" data-tauri-drag-region>
+      <img src="assets/11_title_icon.png" class="title-icon" alt="" draggable="false" data-tauri-drag-region />
+      <div class="window-actions">
+        <button id="minBtn" class="window-btn" aria-label="Küçült">—</button>
+        <button id="closeBtn" class="window-btn close" aria-label="Kapat">×</button>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <img src="assets/11_studio_logo.png" class="studio-logo" alt="11_ Studios" draggable="false" />
+      <div class="launcher-name">11_Launcher</div>
+      <div class="launcher-sub">Minecraft launcher</div>
+      <div class="footer-brand">11_Launcher</div>
+      <div class="footer-version">v2.0 • Vanilla / Fabric / Forge / OptiFine</div>
+      <div class="footer-credit">made by sems11_</div>
+    </aside>
+
+    <main class="content">
+      <img src="assets/11_play_logo.png" class="play-logo" alt="11_ Launcher" draggable="false" />
+
+      <label class="field-label" for="username">OYUNCU ADI</label>
+      <div class="input-shell">
+        <input id="username" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Oyuncu adını yaz" />
+      </div>
+      <div class="hint">3–16 karakter • harf, sayı ve _</div>
+
+      <label class="field-label version-label">SÜRÜM</label>
+      <div class="version-wrap">
+        <button id="versionBtn" class="version-button" type="button">
+          <span id="versionText">Sürüm listesi yükleniyor…</span>
+          <span class="chevron">⌄</span>
+        </button>
+        <div id="versionMenu" class="version-menu hidden"></div>
+      </div>
+
+      <button id="playBtn" class="play-button" disabled>OYNA</button>
+      <div id="status" class="status">Sürüm listesi yükleniyor…</div>
+      <button id="folderBtn" class="folder-button" type="button">📁 Veri klasörünü aç</button>
+      <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
