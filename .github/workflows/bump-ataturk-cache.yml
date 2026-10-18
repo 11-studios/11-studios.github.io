@@ -1,15 +1,21 @@
-name: Publish project catalog v52
+name: Publish cross-device sync v53
 on:
   push:
     paths:
       - '.github/workflows/bump-ataturk-cache.yml'
+      - 'assets/app-original.js'
+      - 'assets/cloud-accounts.js'
+      - 'assets/app-media.js'
+      - 'assets/site-enhancements.js'
+      - 'assets/plugin-files.js'
+      - 'assets/supabase-sync.js'
+      - 'assets/cloud-files.js'
       - 'assets/plugin-browser-v37.js'
       - 'assets/plugin-browser-v37.css'
-      - 'assets/editor-v37.js'
-      - 'assets/editor-v37.css'
       - 'assets/editor-runtime-v37.js'
       - 'assets/editor-runtime-v37.css'
-      - 'assets/editor-v40-bridge.js'
+      - 'assets/editor-state-preload-v47.js'
+      - 'assets/editor-live-sync-v38.js'
 permissions:
   contents: write
 jobs:
@@ -17,45 +23,84 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Pin catalog v52 and editor assets
+      - name: Build clean v53 core and pin sync assets
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
+          V='20261018-53'
+
+          media=Path('assets/app-media.js').read_text(encoding='utf-8')
+          media=media.replace("const heroPromise=loadParts('assets/final-wordmark',8);", "const heroPromise=Promise.resolve('static');")
+          media=media.replace("const faviconPromise=loadParts('assets/final-favicon',4);", "const faviconPromise=Promise.resolve('static');")
+          media=media.replace("img.src=`data:image/png;base64,${heroData}`;", f"img.src='assets/hero-wordmark.png?v={V}';img.decoding='async';")
+          media=media.replace("favicon.type='image/png';favicon.href=`data:image/png;base64,${data}`;", f"favicon.type='image/png';favicon.href='assets/site-icon.png?v={V}';")
+          start=media.find("  const app=document.createElement('script');")
+          load=media.find("  app.addEventListener('load',()=>{\n",start)
+          end_marker="\n  });\n  document.head.appendChild(app);\n})();"
+          end=media.rfind(end_marker)
+          if min(start,load,end) < 0:
+              raise SystemExit('app-media optimization markers missing')
+          body_start=load+len("  app.addEventListener('load',()=>{\n")
+          media_core=media[:start]+media[body_start:end]+"\n})();\n"
+
+          # IMPORTANT: Supabase catalog sync and cloud file sync are loaded once,
+          # separately from site-app. Do not bundle them here.
+          js_files=[
+            Path('assets/app-original.js').read_text(encoding='utf-8'),
+            Path('assets/cloud-accounts.js').read_text(encoding='utf-8'),
+            media_core,
+            Path('assets/site-enhancements.js').read_text(encoding='utf-8'),
+            Path('assets/plugin-files.js').read_text(encoding='utf-8')
+          ]
+          Path('assets/site-app.js').write_text('\n;\n'.join(js_files),encoding='utf-8')
+
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          s=re.sub(r'assets/plugin-browser-v37\.js\?v=[^"\']+', 'assets/plugin-browser-v37.js?v=20261017-52', s)
-          s=re.sub(r'assets/plugin-browser-v37\.css\?v=[^"\']+', 'assets/plugin-browser-v37.css?v=20261017-52', s)
-          s=s.replace('<button type="button" class="project-tab" data-project-type="security">Plugin paketleri</button>','')
-          s=s.replace('<option value="security">Plugin paketleri</option>','')
-          s=s.replace("Yaptığımız pluginleri, paketleri, launcher'ı ve diğer projeleri burada topluyoruz.","Yaptığımız pluginleri, launcher'ı ve diğer projeleri burada topluyoruz.")
-          s=re.sub(r'assets/editor-runtime-v37\.css\?v=[^"\']+', 'assets/editor-runtime-v37.css?v=20261016-44', s)
-          s=re.sub(r'assets/editor-runtime-v37\.js\?v=[^"\']+', 'assets/editor-runtime-v37.js?v=20261016-44', s)
-          p.write_text(s,encoding='utf-8')
+          s=re.sub(r'assets/editor-state-preload-v47\.js\?v=[^"\']+', f'assets/editor-state-preload-v47.js?v={V}', s)
+          s=re.sub(r'assets/plugin-browser-v37\.js\?v=[^"\']+', f'assets/plugin-browser-v37.js?v={V}', s)
+          s=re.sub(r'assets/plugin-browser-v37\.css\?v=[^"\']+', f'assets/plugin-browser-v37.css?v={V}', s)
+          s=re.sub(r'assets/editor-runtime-v37\.css\?v=[^"\']+', f'assets/editor-runtime-v37.css?v={V}', s)
 
-          e=Path('editor.html')
-          x=e.read_text(encoding='utf-8')
-          x=re.sub(r'assets/editor-v37\.css\?v=[^"\']+', 'assets/editor-v37.css?v=20261016-44', x)
-          x=re.sub(r'assets/editor-v37\.js\?v=[^"\']+', 'assets/editor-v37.js?v=20261016-44', x)
-          x=re.sub(r'assets/editor-v40-bridge\.js\?v=[^"\']+', 'assets/editor-v40-bridge.js?v=20261016-44', x)
-          x=re.sub(r'editorPreview=1&v=[^"\']+', 'editorPreview=1&v=44', x)
-          e.write_text(x,encoding='utf-8')
+          block=re.compile(
+            r'<script src="assets/site-app\.js\?v=[^"]+" defer></script>\s*'
+            r'<script src="assets/supabase-sync\.js\?v=[^"]+" defer></script>\s*'
+            r'<script src="assets/cloud-files\.js\?v=[^"]+" defer></script>\s*'
+            r'<script src="assets/plugin-browser-v37\.js\?v=[^"]+" defer></script>\s*'
+            r'<script src="assets/editor-runtime-v37\.js\?v=[^"]+" defer></script>(?:\s*<script src="assets/editor-live-sync-v38\.js\?v=[^"]+" defer></script>)?'
+          )
+          new=(
+            f'<script src="assets/supabase-sync.js?v={V}" defer></script>\n'
+            f'<script src="assets/site-app.js?v={V}" defer></script>\n'
+            f'<script src="assets/cloud-files.js?v={V}" defer></script>\n'
+            f'<script src="assets/plugin-browser-v37.js?v={V}" defer></script>\n'
+            f'<script src="assets/editor-runtime-v37.js?v={V}" defer></script>\n'
+            f'<script src="assets/editor-live-sync-v38.js?v={V}" defer></script>'
+          )
+          s,n=block.subn(new,s,count=1)
+          if n!=1:
+              raise SystemExit('script block not found')
+          p.write_text(s,encoding='utf-8')
           PY
-      - name: Verify catalog v52
+      - name: Verify v53
         run: |
+          node --check assets/site-app.js
+          node --check assets/supabase-sync.js
+          node --check assets/cloud-files.js
           node --check assets/plugin-browser-v37.js
-          node --check assets/editor-v37.js
           node --check assets/editor-runtime-v37.js
-          node --check assets/editor-v40-bridge.js
-          grep -q 'plugin-browser-v37.js?v=20261017-52' index.html
-          grep -q 'plugin-browser-v37.css?v=20261017-52' index.html
-          ! grep -q 'Plugin paketleri' index.html
-      - name: Commit cache refs
+          node --check assets/editor-live-sync-v38.js
+          ! grep -q "const SYNCED_KEY='11_cloud_catalog_synced_v2'" assets/site-app.js
+          grep -q '11_catalog_epoch' assets/supabase-sync.js
+          grep -q 'assets/supabase-sync.js?v=20261018-53' index.html
+          grep -q 'assets/site-app.js?v=20261018-53' index.html
+          grep -q 'assets/editor-live-sync-v38.js?v=20261018-53' index.html
+      - name: Commit v53
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html editor.html
+          git add index.html assets/site-app.js
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish project catalog v52 without plugin packs'
+          git commit -m 'Publish v53 authoritative cross-device sync'
           git push
