@@ -1,4 +1,4 @@
-name: Publish cross-device sync v53
+name: Publish catalog v54
 on:
   push:
     paths:
@@ -10,8 +10,8 @@ on:
       - 'assets/plugin-files.js'
       - 'assets/supabase-sync.js'
       - 'assets/cloud-files.js'
-      - 'assets/plugin-browser-v37.js'
-      - 'assets/plugin-browser-v37.css'
+      - 'assets/catalog-v54.js'
+      - 'assets/catalog-v54.css'
       - 'assets/editor-runtime-v37.js'
       - 'assets/editor-runtime-v37.css'
       - 'assets/editor-state-preload-v47.js'
@@ -23,13 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build clean v53 core and pin sync assets
+      - name: Build clean v54 core and pin catalog assets
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          V='20261018-53'
+          V='20261019-54'
 
           media=Path('assets/app-media.js').read_text(encoding='utf-8')
           media=media.replace("const heroPromise=loadParts('assets/final-wordmark',8);", "const heroPromise=Promise.resolve('static');")
@@ -45,8 +45,6 @@ jobs:
           body_start=load+len("  app.addEventListener('load',()=>{\n")
           media_core=media[:start]+media[body_start:end]+"\n})();\n"
 
-          # IMPORTANT: Supabase catalog sync and cloud file sync are loaded once,
-          # separately from site-app. Do not bundle them here.
           js_files=[
             Path('assets/app-original.js').read_text(encoding='utf-8'),
             Path('assets/cloud-accounts.js').read_text(encoding='utf-8'),
@@ -59,22 +57,21 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           s=re.sub(r'assets/editor-state-preload-v47\.js\?v=[^"\']+', f'assets/editor-state-preload-v47.js?v={V}', s)
-          s=re.sub(r'assets/plugin-browser-v37\.js\?v=[^"\']+', f'assets/plugin-browser-v37.js?v={V}', s)
-          s=re.sub(r'assets/plugin-browser-v37\.css\?v=[^"\']+', f'assets/plugin-browser-v37.css?v={V}', s)
+          s=re.sub(r'assets/(?:plugin-browser-v37|catalog-v54)\.css\?v=[^"\']+', f'assets/catalog-v54.css?v={V}', s)
           s=re.sub(r'assets/editor-runtime-v37\.css\?v=[^"\']+', f'assets/editor-runtime-v37.css?v={V}', s)
 
           block=re.compile(
-            r'<script src="assets/site-app\.js\?v=[^"]+" defer></script>\s*'
             r'<script src="assets/supabase-sync\.js\?v=[^"]+" defer></script>\s*'
+            r'<script src="assets/site-app\.js\?v=[^"]+" defer></script>\s*'
             r'<script src="assets/cloud-files\.js\?v=[^"]+" defer></script>\s*'
-            r'<script src="assets/plugin-browser-v37\.js\?v=[^"]+" defer></script>\s*'
+            r'<script src="assets/(?:plugin-browser-v37|catalog-v54)\.js\?v=[^"]+" defer></script>\s*'
             r'<script src="assets/editor-runtime-v37\.js\?v=[^"]+" defer></script>(?:\s*<script src="assets/editor-live-sync-v38\.js\?v=[^"]+" defer></script>)?'
           )
           new=(
             f'<script src="assets/supabase-sync.js?v={V}" defer></script>\n'
             f'<script src="assets/site-app.js?v={V}" defer></script>\n'
             f'<script src="assets/cloud-files.js?v={V}" defer></script>\n'
-            f'<script src="assets/plugin-browser-v37.js?v={V}" defer></script>\n'
+            f'<script src="assets/catalog-v54.js?v={V}" defer></script>\n'
             f'<script src="assets/editor-runtime-v37.js?v={V}" defer></script>\n'
             f'<script src="assets/editor-live-sync-v38.js?v={V}" defer></script>'
           )
@@ -83,24 +80,25 @@ jobs:
               raise SystemExit('script block not found')
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Verify v53
+      - name: Verify v54
         run: |
           node --check assets/site-app.js
           node --check assets/supabase-sync.js
           node --check assets/cloud-files.js
-          node --check assets/plugin-browser-v37.js
+          node --check assets/catalog-v54.js
           node --check assets/editor-runtime-v37.js
           node --check assets/editor-live-sync-v38.js
-          ! grep -q "const SYNCED_KEY='11_cloud_catalog_synced_v2'" assets/site-app.js
-          grep -q '11_catalog_epoch' assets/supabase-sync.js
-          grep -q 'assets/supabase-sync.js?v=20261018-53' index.html
-          grep -q 'assets/site-app.js?v=20261018-53' index.html
-          grep -q 'assets/editor-live-sync-v38.js?v=20261018-53' index.html
-      - name: Commit v53
+          grep -q 'Premium Pluginler' assets/catalog-v54.js
+          grep -q 'PAGE_SIZE=5' assets/catalog-v54.js
+          grep -q 'assets/supabase-sync.js?v=20261019-54' index.html
+          grep -q 'assets/catalog-v54.js?v=20261019-54' index.html
+          grep -q 'assets/catalog-v54.css?v=20261019-54' index.html
+          grep -q 'assets/editor-live-sync-v38.js?v=20261019-54' index.html
+      - name: Commit v54
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html assets/site-app.js
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish v53 authoritative cross-device sync'
+          git commit -m 'Publish v54 premium plugin catalog'
           git push
