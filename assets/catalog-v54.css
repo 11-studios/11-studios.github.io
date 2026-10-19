@@ -1,0 +1,78 @@
+#plugins.section{padding:36px 0 28px!important}
+#plugins .section-head{margin-bottom:14px!important}
+#plugins .section-head .kicker{letter-spacing:.08em;text-transform:uppercase}
+#plugins #storeDesc,#about #aboutDesc{display:none!important}
+#plugins .market-surface{padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+#plugins .market-inner{padding:0!important}
+#plugins .market-title{display:flex!important;align-items:center;justify-content:flex-end;margin:0 0 4px!important;padding:0!important}
+#plugins .market-title h3{display:none!important}
+#plugins .market-title span{font-size:12px;color:#8f849a}
+
+#plugins .project-tabs{display:flex;align-items:center;gap:26px;margin:0 0 18px;padding:0;border-bottom:1px solid #241d2b;overflow-x:auto;scrollbar-width:none}
+#plugins .project-tabs::-webkit-scrollbar{display:none}
+#plugins .project-tab{position:relative;appearance:none;border:0;background:none;color:#8f8499;padding:0 0 11px;margin:0;font:inherit;font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer}
+#plugins .project-tab:hover{color:#d4cadc}
+#plugins .project-tab.active{color:#f4eef8}
+#plugins .project-tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:#b58cff}
+
+#plugins .catalog-v54{display:block!important}
+#plugins .catalog-group{margin:0 0 28px}
+#plugins .catalog-group:last-child{margin-bottom:0}
+#plugins .catalog-group-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 8px;padding:0 2px}
+#plugins .catalog-group-head h3{margin:0;color:#f3eef7;font-size:17px;line-height:1.2;font-weight:750}
+#plugins .catalog-group-head span{font-size:11px;color:#7f7489}
+#plugins .premium-group .catalog-group-head h3{color:#c9a9ff}
+#plugins .premium-group .project-list{border-top-color:#3a2850}
+
+#plugins .project-list{display:block!important;border-top:1px solid #241d2b;background:transparent!important;overflow:visible!important;max-height:none!important}
+#plugins .project-row{width:100%;display:grid;grid-template-columns:88px minmax(0,1fr) auto;align-items:center;gap:16px;padding:15px 4px;border:0;border-bottom:1px solid #241d2b;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:0;box-shadow:none;transition:background .12s ease}
+#plugins .project-row:hover{background:rgba(255,255,255,.025)}
+#plugins .project-row:focus-visible{outline:1px solid #b58cff;outline-offset:-1px}
+#plugins .project-thumb{width:88px;height:64px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0b0810;border:1px solid #211a28}
+#plugins .project-thumb img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+#plugins .project-copy{min-width:0;display:block}
+#plugins .project-name{display:block;margin:0 0 3px;color:#f2edf6;font-size:17px;font-weight:700;line-height:1.2}
+#plugins .project-meta{display:block;margin-bottom:5px;color:#80768a;font-size:11px;line-height:1.25}
+#plugins .project-description{display:-webkit-box;overflow:hidden;color:#b5abbf;font-size:13px;line-height:1.45;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+#plugins .project-side{display:flex;align-items:center;gap:12px;justify-content:flex-end;padding-left:16px;white-space:nowrap}
+#plugins .project-side strong{font-size:13px;font-weight:600;color:#d7cde0}
+#plugins .premium-group .project-side strong{color:#c7a0ff}
+#plugins .project-side>span{font-size:24px;line-height:1;color:#6f6479;font-weight:300}
+#plugins .project-empty{padding:22px 4px;border-bottom:1px solid #241d2b;color:#8f8499;font-size:13px}
+
+#plugins .catalog-pagination{display:flex;align-items:center;justify-content:flex-start;gap:5px;padding:10px 0 0}
+#plugins .catalog-page{min-width:30px;height:30px;padding:0 8px;border:1px solid #2d2336;border-radius:5px;background:#0d0911;color:#9e93a8;font:inherit;font-size:12px;cursor:pointer;box-shadow:none}
+#plugins .catalog-page:hover:not(:disabled){border-color:#5c4173;color:#ece4f3}
+#plugins .catalog-page.active{border-color:#9d70d4;background:#21142d;color:#f5eff9;font-weight:700}
+#plugins .catalog-page:disabled{opacity:.35;cursor:default}
+#plugins .catalog-page-dots{min-width:22px;text-align:center;color:#6e6377;font-size:12px}
+
+.plugin-detail-page{z-index:1200}
+.plugin-detail-page.open{display:block}
+
+#adminList .project-admin-item{display:grid!important;grid-template-columns:42px minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important;margin:0!important;padding:11px 0!important;border:0!important;border-bottom:1px solid #2a2230!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+#adminList .project-admin-item>img{width:42px!important;height:42px!important;object-fit:contain!important;border:1px solid #2a2230!important;border-radius:0!important;background:#0b0810!important}
+#adminList .project-admin-item .admin-item-name{font-size:13px!important;font-weight:700!important;color:#eee8f2!important}
+#adminList .project-admin-item .admin-item-meta{font-size:10px!important;color:#897e92!important;margin-top:3px!important}
+#adminList .project-admin-item .admin-item-actions{display:flex!important;gap:6px!important}
+#adminList .project-admin-item .btn{border-radius:4px!important;box-shadow:none!important}
+
+@media(max-width:720px){
+  #plugins.section{padding:26px 0 20px!important}
+  #plugins .project-tabs{gap:20px;margin-bottom:14px}
+  #plugins .project-tab{font-size:13px;padding-bottom:10px}
+  #plugins .catalog-group{margin-bottom:22px}
+  #plugins .catalog-group-head h3{font-size:15px}
+  #plugins .project-row{grid-template-columns:70px minmax(0,1fr);gap:12px;padding:13px 2px}
+  #plugins .project-thumb{width:70px;height:52px}
+  #plugins .project-name{font-size:15px}
+  #plugins .project-description{font-size:12px;-webkit-line-clamp:2}
+  #plugins .project-side{grid-column:2;justify-content:flex-start;padding:0;margin-top:-3px;gap:8px}
+  #plugins .project-side>span{font-size:18px}
+  #plugins .catalog-pagination{gap:4px;overflow-x:auto;scrollbar-width:none}
+  #plugins .catalog-pagination::-webkit-scrollbar{display:none}
+  #plugins .catalog-page{min-width:29px;height:29px;padding:0 7px}
+  #adminList .project-admin-item{grid-template-columns:36px minmax(0,1fr)!important}
+  #adminList .project-admin-item>img{width:36px!important;height:36px!important}
+  #adminList .project-admin-item .admin-item-actions{grid-column:2;justify-content:flex-start}
+}
