@@ -1,9 +1,9 @@
-#plugins.section{padding:36px 0 28px!important}
+#plugins.section{padding:36px 0 28px!important;min-height:0!important;height:auto!important}
 #plugins .section-head{margin-bottom:14px!important}
 #plugins .section-head .kicker{letter-spacing:.08em;text-transform:uppercase}
 #plugins #storeDesc,#about #aboutDesc{display:none!important}
-#plugins .market-surface{padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
-#plugins .market-inner{padding:0!important}
+#plugins .market-surface{padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-height:0!important;height:auto!important}
+#plugins .market-inner{padding:0!important;min-height:0!important;height:auto!important}
 #plugins .market-title{display:flex!important;align-items:center;justify-content:flex-end;margin:0 0 4px!important;padding:0!important}
 #plugins .market-title h3{display:none!important}
 #plugins .market-title span{font-size:12px;color:#8f849a}
@@ -15,8 +15,8 @@
 #plugins .project-tab.active{color:#f4eef8}
 #plugins .project-tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:#b58cff}
 
-#plugins .catalog-v54{display:block!important}
-#plugins .catalog-group{margin:0 0 28px}
+#plugins .catalog-v54{display:block!important;min-height:0!important;height:auto!important}
+#plugins .catalog-group{display:flex!important;flex-direction:column!important;justify-content:flex-start!important;min-height:0!important;height:auto!important;margin:0 0 28px}
 #plugins .catalog-group:last-child{margin-bottom:0}
 #plugins .catalog-group-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 8px;padding:0 2px}
 #plugins .catalog-group-head h3{margin:0;color:#f3eef7;font-size:17px;line-height:1.2;font-weight:750}
@@ -24,7 +24,7 @@
 #plugins .premium-group .catalog-group-head h3{color:#c9a9ff}
 #plugins .premium-group .project-list{border-top-color:#3a2850}
 
-#plugins .project-list{display:block!important;border-top:1px solid #241d2b;background:transparent!important;overflow:visible!important;max-height:none!important}
+#plugins .project-list{display:block!important;border-top:1px solid #241d2b;background:transparent!important;overflow:visible!important;max-height:none!important;min-height:0!important;height:auto!important;flex:0 0 auto!important}
 #plugins .project-row{width:100%;display:grid;grid-template-columns:88px minmax(0,1fr) auto;align-items:center;gap:16px;padding:15px 4px;border:0;border-bottom:1px solid #241d2b;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:0;box-shadow:none;transition:background .12s ease}
 #plugins .project-row:hover{background:rgba(255,255,255,.025)}
 #plugins .project-row:focus-visible{outline:1px solid #b58cff;outline-offset:-1px}
@@ -40,11 +40,12 @@
 #plugins .project-side>span{font-size:24px;line-height:1;color:#6f6479;font-weight:300}
 #plugins .project-empty{padding:22px 4px;border-bottom:1px solid #241d2b;color:#8f8499;font-size:13px}
 
-#plugins .catalog-pagination{display:flex;align-items:center;justify-content:flex-start;gap:5px;padding:10px 0 0}
-#plugins .catalog-page{min-width:30px;height:30px;padding:0 8px;border:1px solid #2d2336;border-radius:5px;background:#0d0911;color:#9e93a8;font:inherit;font-size:12px;cursor:pointer;box-shadow:none}
-#plugins .catalog-page:hover:not(:disabled){border-color:#5c4173;color:#ece4f3}
-#plugins .catalog-page.active{border-color:#9d70d4;background:#21142d;color:#f5eff9;font-weight:700}
-#plugins .catalog-page:disabled{opacity:.35;cursor:default}
+#plugins .catalog-pagination{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;margin:16px 0 0!important;padding:0!important;min-height:32px!important;height:auto!important}
+#plugins .catalog-page{box-sizing:border-box!important;width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;min-height:32px!important;max-height:32px!important;padding:0!important;margin:0!important;border:1px solid #2d2336!important;border-radius:6px!important;background:#0d0911!important;color:#9e93a8!important;font:inherit!important;font-size:12px!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:0!important;cursor:pointer;box-shadow:none!important;flex:0 0 32px!important}
+#plugins .catalog-page.nav{width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;min-height:32px!important;max-height:32px!important;padding:0!important;margin:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:0!important;border:1px solid #2d2336!important;border-radius:6px!important;background:#0d0911!important;color:#9e93a8!important;line-height:1!important;flex:0 0 32px!important}
+#plugins .catalog-page:hover:not(:disabled){border-color:#5c4173!important;color:#ece4f3!important;background:#130d19!important}
+#plugins .catalog-page.active{border-color:#9d70d4!important;background:#21142d!important;color:#f5eff9!important;font-weight:700!important}
+#plugins .catalog-page:disabled{opacity:.35!important;cursor:default!important}
 #plugins .catalog-page-dots{min-width:22px;text-align:center;color:#6e6377;font-size:12px}
 
 .plugin-detail-page{z-index:1200}
@@ -69,9 +70,9 @@
   #plugins .project-description{font-size:12px;-webkit-line-clamp:2}
   #plugins .project-side{grid-column:2;justify-content:flex-start;padding:0;margin-top:-3px;gap:8px}
   #plugins .project-side>span{font-size:18px}
-  #plugins .catalog-pagination{gap:4px;overflow-x:auto;scrollbar-width:none}
+  #plugins .catalog-pagination{gap:6px!important;margin-top:14px!important;overflow-x:auto;scrollbar-width:none}
   #plugins .catalog-pagination::-webkit-scrollbar{display:none}
-  #plugins .catalog-page{min-width:29px;height:29px;padding:0 7px}
+  #plugins .catalog-page,#plugins .catalog-page.nav{width:30px!important;min-width:30px!important;max-width:30px!important;height:30px!important;min-height:30px!important;max-height:30px!important;flex-basis:30px!important}
   #adminList .project-admin-item{grid-template-columns:36px minmax(0,1fr)!important}
   #adminList .project-admin-item>img{width:36px!important;height:36px!important}
   #adminList .project-admin-item .admin-item-actions{grid-column:2;justify-content:flex-start}
