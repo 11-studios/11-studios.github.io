@@ -393,7 +393,7 @@ updateSessionUI();applyLanguage(currentLang);
     img.alt='11_ Studios';
     img.dataset.ready='1';
     img.decoding='async';
-    img.src='assets/hero-wordmark.png?v=20261018-53';img.decoding='async';
+    img.src='assets/hero-wordmark.png?v=20261019-54';img.decoding='async';
     eyebrow.style.removeProperty('background-image');
     eyebrow.setAttribute('aria-label','11_ Studios');
     eyebrow.replaceChildren(img);
@@ -602,7 +602,7 @@ updateSessionUI();applyLanguage(currentLang);
   faviconPromise.then(data=>{
     let favicon=document.querySelector('link[rel~="icon"]');
     if(!favicon){favicon=document.createElement('link');favicon.rel='icon';document.head.appendChild(favicon);}
-    favicon.type='image/png';favicon.href='assets/site-icon.png?v=20261018-53';
+    favicon.type='image/png';favicon.href='assets/site-icon.png?v=20261019-54';
   }).catch(err=>console.error('[11_ Studios] favicon load failed',err));
 
   heroPromise.then(data=>{
