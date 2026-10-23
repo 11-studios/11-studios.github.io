@@ -1,4 +1,4 @@
-name: Publish catalog v54
+name: Publish catalog v55
 on:
   push:
     paths:
@@ -16,6 +16,7 @@ on:
       - 'assets/editor-runtime-v37.css'
       - 'assets/editor-state-preload-v47.js'
       - 'assets/editor-live-sync-v38.js'
+      - 'assets/footer-credit-v38.js'
 permissions:
   contents: write
 jobs:
@@ -23,13 +24,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build clean v54 core and pin catalog assets
+      - name: Build clean v55 core and pin catalog assets
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
 
-          V='20261019-54'
+          V='20261023-55'
 
           media=Path('assets/app-media.js').read_text(encoding='utf-8')
           media=media.replace("const heroPromise=loadParts('assets/final-wordmark',8);", "const heroPromise=Promise.resolve('static');")
@@ -50,7 +51,8 @@ jobs:
             Path('assets/cloud-accounts.js').read_text(encoding='utf-8'),
             media_core,
             Path('assets/site-enhancements.js').read_text(encoding='utf-8'),
-            Path('assets/plugin-files.js').read_text(encoding='utf-8')
+            Path('assets/plugin-files.js').read_text(encoding='utf-8'),
+            Path('assets/footer-credit-v38.js').read_text(encoding='utf-8')
           ]
           Path('assets/site-app.js').write_text('\n;\n'.join(js_files),encoding='utf-8')
 
@@ -80,7 +82,7 @@ jobs:
               raise SystemExit('script block not found')
           p.write_text(s,encoding='utf-8')
           PY
-      - name: Verify v54
+      - name: Verify v55
         run: |
           node --check assets/site-app.js
           node --check assets/supabase-sync.js
@@ -88,17 +90,19 @@ jobs:
           node --check assets/catalog-v54.js
           node --check assets/editor-runtime-v37.js
           node --check assets/editor-live-sync-v38.js
+          node --check assets/footer-credit-v38.js
           grep -q 'Premium Pluginler' assets/catalog-v54.js
           grep -q 'PAGE_SIZE=5' assets/catalog-v54.js
-          grep -q 'assets/supabase-sync.js?v=20261019-54' index.html
-          grep -q 'assets/catalog-v54.js?v=20261019-54' index.html
-          grep -q 'assets/catalog-v54.css?v=20261019-54' index.html
-          grep -q 'assets/editor-live-sync-v38.js?v=20261019-54' index.html
-      - name: Commit v54
+          grep -q 'Bu site ve bu sitede paylaşılan tüm projeler sems11_' assets/site-app.js
+          grep -q 'assets/supabase-sync.js?v=20261023-55' index.html
+          grep -q 'assets/catalog-v54.js?v=20261023-55' index.html
+          grep -q 'assets/catalog-v54.css?v=20261023-55' index.html
+          grep -q 'assets/editor-live-sync-v38.js?v=20261023-55' index.html
+      - name: Commit v55
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html assets/site-app.js
           git diff --cached --quiet && exit 0
-          git commit -m 'Publish v54 premium plugin catalog'
+          git commit -m 'Publish v55 footer ownership credit'
           git push
